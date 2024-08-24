@@ -23,7 +23,8 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <main.h>
+#include "Stm32NetXCPPWrapper.hpp"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -65,6 +66,10 @@ UINT MX_NetXDuo_Init(VOID *memory_ptr)
   /* USER CODE END MX_NetXDuo_MEM_POOL */
 
   /* USER CODE BEGIN MX_NetXDuo_Init */
+
+  // Jump to the C++ NetX thread setup function
+  ret = Stm32NetX_setup(byte_pool);
+  assert_param(ret == TX_SUCCESS);
 
   /* USER CODE END MX_NetXDuo_Init */
 
