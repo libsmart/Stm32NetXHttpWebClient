@@ -17,6 +17,12 @@
 /** Name of the firmware. */
 #define FIRMWARE_NAME "nucleo-f429zi Stm32NetXHttpWebClient example"
 
+/** Copyright of the firmware */
+#define FIRMWARE_COPY "(c) 2024 easy-smart solution GmbH"
+
+/** Build time of the firmware */
+#define FIRMWARE_BUILDTIME BUILD_TIME
+
 /** Version of the firmware. */
 #ifndef FIRMWARE_VERSION
 #ifdef VER_NEXT_ALPHA

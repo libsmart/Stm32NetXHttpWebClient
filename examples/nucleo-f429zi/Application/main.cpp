@@ -10,10 +10,16 @@
  */
 
 #include "main.hpp"
+
+#include <Client.hpp>
+#include <Stm32NetXHttpWebClient.hpp>
+
+#include "Address.hpp"
 #include "eth.h"
 #include "globals.hpp"
 #include "RunEvery.hpp"
 #include "RunOnce.hpp"
+#include "RunThreadOnce.hpp"
 #include "Stm32NetX.hpp"
 
 
@@ -28,6 +34,20 @@ void setup() {
 
     dummyCpp = 0;
     dummyCandCpp = 0;
+
+    Serial3.begin();
+    Serial3.begin();
+    // print welcome message
+    Serial3.print(F("startup "));
+    Serial3.print(FIRMWARE_NAME);
+    Serial3.print(F(" v"));
+    Serial3.print(FIRMWARE_VERSION);
+    Serial3.print(F(" "));
+    Serial3.println(FIRMWARE_COPY);
+    Serial3.flush();
+    delay(500);
+    Serial3.println(F("OK"));
+    Serial3.flush();
 }
 
 
@@ -52,9 +72,12 @@ void loopOnce() {
  * @see mainLoopThread() in AZURE_RTOS/App/app_azure_rtos.c
  */
 void loop() {
-    // static Stm32NetXTelnet::Server telnetServer;
+    Serial3.loop();
+
+    static Stm32NetXHttpWebClient::Client webClient;
     // static UCHAR stackTelnet[2048];
-    static Stm32Common::RunOnce roWebClient;
+
+    static Stm32ThreadX::RunThreadOnce roWebClient;
 
     if (Stm32NetX::NX->isIpSet()) {
         roWebClient.loop([]() {
@@ -62,6 +85,35 @@ void loop() {
                     ->println("::loop() roWebClient");
 
 
+            webClient.setLogger(&Logger);
+            webClient.setName("webClient");
+            webClient.create();
+            Stm32NetX::Address ipAddress;
+            ipAddress.nxd_ip_version = 4;
+            ipAddress.nxd_ip_address.v4 = IP_ADDRESS(10, 82, 2, 198);
+            auto ret = webClient.getStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/", (char *) "10.82.2.198", NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
+            if (ret == NX_SUCCESS) {
+                NX_PACKET *packet = nullptr;
+                do {
+                    ret = webClient.responseBodyGet(&packet, TX_TIMER_TICKS_PER_SECOND);
+                    if (packet != NX_NULL) {
+                        char buffer[2048];
+                        ULONG bytes_copied{};
+                        auto ret2 = nx_packet_data_retrieve(packet, buffer, &bytes_copied);
+                        if (ret2 != NX_SUCCESS) {
+                            Logger.printf("nx_packet_data_retrieve() = 0x%02x\r\n", ret2);
+                        }
+
+
+                        Serial3.printf("Received %lu bytes\r\n", bytes_copied);
+                        Serial3.printf("%.*s", bytes_copied, buffer);
+                        Serial3.println();
+                        Serial3.println();
+
+                        nx_packet_release(packet);
+                    }
+                } while (ret != NX_WEB_HTTP_GET_DONE);
+            }
         });
     }
 

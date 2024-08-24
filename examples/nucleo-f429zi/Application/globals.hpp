@@ -14,6 +14,7 @@
 #include "globals.h"
 #include "Stm32ItmLogger.hpp"
 #include <cstdint>
+#include "Driver/Stm32HalUartItDriver.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -25,6 +26,9 @@ extern uint32_t dummyCpp;
  * Global logger instance
  */
 inline Stm32ItmLogger::Stm32ItmLogger &Logger = Stm32ItmLogger::logger;
+
+inline Stm32Serial::Stm32HalUartItDriver uart3Driver(&huart3, "uart3Driver");
+inline Stm32Serial::Stm32Serial Serial3(&uart3Driver);
 
 
 #ifdef __cplusplus

@@ -54,6 +54,7 @@ include_directories(Core/Inc AZURE_RTOS/App NetXDuo/App NetXDuo/Target Drivers/S
     ../../src
     Lib/Stm32Common/src
     Lib/Stm32ItmLogger/src
+    Lib/Stm32Serial/src
     Lib/Stm32ThreadX/src
     Lib/Stm32NetX/src
 )
@@ -65,6 +66,7 @@ file(GLOB_RECURSE SOURCES "AZURE_RTOS/*.*" "NetXDuo/*.*" "Core/*.*" "Middlewares
     "../../src/*.*"
     "Lib/Stm32Common/src/*.*"
     "Lib/Stm32ItmLogger/src/*.*"
+    "Lib/Stm32Serial/src/*.*"
     "Lib/Stm32ThreadX/src/*.*"
     "Lib/Stm32NetX/src/*.*"
 )

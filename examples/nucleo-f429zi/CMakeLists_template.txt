@@ -53,6 +53,7 @@ include_directories(${includes}
     ../../src
     Lib/Stm32Common/src
     Lib/Stm32ItmLogger/src
+    Lib/Stm32Serial/src
     Lib/Stm32ThreadX/src
     Lib/Stm32NetX/src
 )
@@ -64,6 +65,7 @@ file(GLOB_RECURSE SOURCES ${sources}
     "../../src/*.*"
     "Lib/Stm32Common/src/*.*"
     "Lib/Stm32ItmLogger/src/*.*"
+    "Lib/Stm32Serial/src/*.*"
     "Lib/Stm32ThreadX/src/*.*"
     "Lib/Stm32NetX/src/*.*"
 )

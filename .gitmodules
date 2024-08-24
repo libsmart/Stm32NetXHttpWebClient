@@ -14,3 +14,7 @@
 	path = examples/nucleo-f429zi/Lib/Stm32NetX
 	url = https://github.com/libsmart/Stm32NetX.git
 	branch = 0.1.x
+[submodule "examples/nucleo-f429zi/Lib/Stm32Serial"]
+	path = examples/nucleo-f429zi/Lib/Stm32Serial
+	url = https://github.com/libsmart/Stm32Serial.git
+	branch = 0.1.x
