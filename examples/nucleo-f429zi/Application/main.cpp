@@ -21,6 +21,7 @@
 #include "RunOnce.hpp"
 #include "RunThreadOnce.hpp"
 #include "Stm32NetX.hpp"
+#include "Dns/Dns.hpp"
 
 
 /**
@@ -74,9 +75,6 @@ void loopOnce() {
 void loop() {
     Serial3.loop();
 
-    static Stm32NetXHttpWebClient::Client webClient;
-    // static UCHAR stackTelnet[2048];
-
     static Stm32ThreadX::RunThreadOnce roWebClient;
 
     if (Stm32NetX::NX->isIpSet()) {
@@ -85,13 +83,31 @@ void loop() {
                     ->println("::loop() roWebClient");
 
 
+            Stm32NetX::Address ipAddress;
+            ipAddress.nxd_ip_version = NX_IP_VERSION_V4;
+            ipAddress.nxd_ip_address.v4 = Stm32NetX::NX->getIpInstance()->ipGatewayAddressGet();
+            dns.setLogger(&Logger);
+            dns.setName(Stm32NetX::NX->getConfig()->hostname);
+            dns.create();
+            dns.serverAdd(&ipAddress);
+            dns.hostByNameGet((CHAR *)"easy-smart.ch", &ipAddress, TX_TIMER_TICKS_PER_SECOND, NX_IP_VERSION_V4);
+
+            Logger.printf("IP_ADDRESS: %lu.%lu.%lu.%lu\r\n",
+                          (ipAddress.nxd_ip_address.v4 >> 24) & 0xff,
+                          (ipAddress.nxd_ip_address.v4 >> 16) & 0xff,
+                          (ipAddress.nxd_ip_address.v4 >> 8) & 0xff,
+                          (ipAddress.nxd_ip_address.v4 >> 0) & 0xff
+            );
+
+
             webClient.setLogger(&Logger);
             webClient.setName("webClient");
             webClient.create();
-            Stm32NetX::Address ipAddress;
-            ipAddress.nxd_ip_version = 4;
-            ipAddress.nxd_ip_address.v4 = IP_ADDRESS(10, 82, 2, 198);
-            auto ret = webClient.getStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/", (char *) "10.82.2.198", NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
+
+            // ipAddress.nxd_ip_version = NX_IP_VERSION_V4;
+            // ipAddress.nxd_ip_address.v4 = IP_ADDRESS(10, 82, 2, 198);
+            auto ret = webClient.getStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/", (CHAR *)"easy-smart.ch",
+                                          NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
             if (ret == NX_SUCCESS) {
                 NX_PACKET *packet = nullptr;
                 do {
@@ -112,7 +128,7 @@ void loop() {
 
                         nx_packet_release(packet);
                     }
-                } while (ret != NX_WEB_HTTP_GET_DONE);
+                } while (ret != NX_WEB_HTTP_GET_DONE && ret != NX_WEB_HTTP_ERROR);
             }
         });
     }

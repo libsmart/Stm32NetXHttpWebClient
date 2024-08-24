@@ -10,6 +10,8 @@
 #include "../Lib/Stm32ThreadX/src/libsmart_config.dist.hpp"
 #include "../Lib/Stm32NetX/src/libsmart_config.dist.hpp"
 
+#define LIBSMART_STM32NETX_ENABLE_DNS
+
 #define LIBSMART_STM32SERIAL_ENABLE_HAL_UART_IT_DRIVER
 
 #undef LIBSMART_STM32SERIAL_BUFFER_SIZE_TX

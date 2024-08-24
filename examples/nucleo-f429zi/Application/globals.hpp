@@ -11,9 +11,13 @@
 #ifndef NUCLEO_F429ZI_APPLICATION_GLOBALS_HPP
 #define NUCLEO_F429ZI_APPLICATION_GLOBALS_HPP
 
+#include <Client.hpp>
+
 #include "globals.h"
 #include "Stm32ItmLogger.hpp"
 #include <cstdint>
+
+#include "Dns/Dns.hpp"
 #include "Driver/Stm32HalUartItDriver.hpp"
 
 #ifdef __cplusplus
@@ -30,6 +34,8 @@ inline Stm32ItmLogger::Stm32ItmLogger &Logger = Stm32ItmLogger::logger;
 inline Stm32Serial::Stm32HalUartItDriver uart3Driver(&huart3, "uart3Driver");
 inline Stm32Serial::Stm32Serial Serial3(&uart3Driver);
 
+inline Stm32NetX::Dns dns;
+inline Stm32NetXHttpWebClient::Client webClient;
 
 #ifdef __cplusplus
 }
