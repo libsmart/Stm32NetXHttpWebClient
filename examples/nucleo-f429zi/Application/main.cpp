@@ -90,7 +90,7 @@ void loop() {
             dns.setName(Stm32NetX::NX->getConfig()->hostname);
             dns.create();
             dns.serverAdd(&ipAddress);
-            dns.hostByNameGet((CHAR *)"easy-smart.ch", &ipAddress, TX_TIMER_TICKS_PER_SECOND, NX_IP_VERSION_V4);
+            dns.hostByNameGet((CHAR *) "easy-smart.ch", &ipAddress, TX_TIMER_TICKS_PER_SECOND, NX_IP_VERSION_V4);
 
             Logger.printf("IP_ADDRESS: %lu.%lu.%lu.%lu\r\n",
                           (ipAddress.nxd_ip_address.v4 >> 24) & 0xff,
@@ -106,8 +106,9 @@ void loop() {
 
             // ipAddress.nxd_ip_version = NX_IP_VERSION_V4;
             // ipAddress.nxd_ip_address.v4 = IP_ADDRESS(10, 82, 2, 198);
-            auto ret = webClient.getStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/", (CHAR *)"easy-smart.ch",
-                                          NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
+            auto ret = webClient.getSecureStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/",
+                                                (CHAR *) "easy-smart.ch",
+                                                NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
             if (ret == NX_SUCCESS) {
                 NX_PACKET *packet = nullptr;
                 do {
@@ -155,15 +156,25 @@ void loop() {
  * @see Error_Handler() in Core/Src/main.c
  */
 [[noreturn]] void errorHandler() {
-    for (;;) {
-        //        for (uint32_t i = (SystemCoreClock / 10); i > 0; i--) { UNUSED(i); }
+    HAL_GPIO_WritePin(LD1_GPIO_Port, LD1_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(LD3_GPIO_Port, LD3_Pin, GPIO_PIN_RESET);
+
+    while (true) {
+        for (uint32_t i = (SystemCoreClock / 10); i > 0; i--) { UNUSED(i); }
+        HAL_GPIO_TogglePin(LD1_GPIO_Port, LD1_Pin);
+        HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+        HAL_GPIO_TogglePin(LD3_GPIO_Port, LD3_Pin);
     }
 }
 
 
 [[noreturn]] void Stack_Error_Handler(TX_THREAD *thread_ptr) {
-    Logger.print("==> Stack_Error_Handler() in ");
+    Logger.print("==> Stack_Error_Handler() called in thread ");
     Logger.println(thread_ptr->tx_thread_name);
+    Logger.print("    Stack size: ");
+    Logger.println(thread_ptr->tx_thread_stack_size);
+    Error_Handler();
     __disable_irq();
     for (;;) { ; }
 }

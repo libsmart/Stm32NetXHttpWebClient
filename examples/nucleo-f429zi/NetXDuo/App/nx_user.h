@@ -2416,9 +2416,9 @@
 /* If defined, this macro enables TLS and HTTPS. Leave undefined to free up
    resources if only plain-text HTTP is desired. By default, this macro is not
    defined. */
-/*
+
 #define NX_WEB_HTTPS_ENABLE
-*/
+
 
 /* If defined, authentication using the MD5 digest is enabled on the HTTPS
    Server. By default it is not defined. */
