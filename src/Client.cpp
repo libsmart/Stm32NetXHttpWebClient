@@ -22,6 +22,7 @@ UINT Client::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, 
                 ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_create() = 0x%02x\r\n",
                          getName(), ret);
     }
+    flags.set(IS_CREATED);
     return ret;
 }
 
@@ -29,10 +30,11 @@ UINT Client::create() {
     return create(getNameNonConst(), Stm32NetX::NX->getIpInstance(), Stm32NetX::NX->getPacketPool(), 8 * 1024);
 }
 
-
 UINT Client::del() {
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
             ->println("Stm32NetXHttpWebClient::Client::del()");
+
+    flags.clear(IS_CREATED);
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_delete
     const auto ret = nx_web_http_client_delete(this);
@@ -101,7 +103,12 @@ UINT Client::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option
                 ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_connect() = 0x%02x\r\n",
                          getName(), ret);
     }
+    flags.set(IS_CONNECTED);
     return ret;
+}
+
+bool Client::isReadyForConnect() {
+    return flags.isSet(IS_CREATED) && !flags.isSet(IS_CONNECTED) && Stm32NetX::NX->isIpSet();
 }
 
 

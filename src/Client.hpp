@@ -6,6 +6,7 @@
 #ifndef LIBSMART_STM32NETXHTTPWEBCLIENT_CLIENT_HPP
 #define LIBSMART_STM32NETXHTTPWEBCLIENT_CLIENT_HPP
 
+#include "EventFlags.hpp"
 #include "Secure/X509.hpp"
 #include "Loggable.hpp"
 #include "Nameable.hpp"
@@ -13,8 +14,10 @@
 
 
 #define NX_WEB_HTTP_SESSION_MAX 1
-extern const NX_SECURE_TLS_CRYPTO nx_crypto_tls_ciphers;
 
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
+extern const NX_SECURE_TLS_CRYPTO nx_crypto_tls_ciphers;
+#endif
 
 namespace Stm32NetXHttpWebClient {
     class Client : protected NX_WEB_HTTP_CLIENT, public Stm32ItmLogger::Loggable, public Stm32Common::Nameable {
@@ -22,6 +25,14 @@ namespace Stm32NetXHttpWebClient {
         Client() : NX_WEB_HTTP_CLIENT_STRUCT(), Nameable("Stm32NetXHttpWebClient::Client") {
             registerInstance(this);
         }
+
+        using Flags = enum: ULONG {
+            NONE = 0,
+            IS_CREATED = 1UL << 0,
+            IS_CONNECTED = 1UL << 1,
+            IS_INITIALIZED = 1UL << 2,
+            THE_END = 1UL << 31
+        };
 
         UINT create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, ULONG window_size);
 
@@ -37,6 +48,21 @@ namespace Stm32NetXHttpWebClient {
 
 
         UINT connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option);
+
+
+
+
+
+
+
+
+        bool isReadyForConnect();
+
+        UINT awaitFlag(const ULONG requestedFlags) { return flags.await(requestedFlags); }
+
+
+    protected:
+        Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};
 
     private:
         inline static Client *httpWebClientRegistry[5]{};
