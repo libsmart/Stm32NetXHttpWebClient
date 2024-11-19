@@ -11,8 +11,8 @@
  */
 
 
-#ifndef NUCLEO_F429ZI_APPLICATION_DEFINES_H
-#define NUCLEO_F429ZI_APPLICATION_DEFINES_H
+#ifndef NUCLEO_F429ZI_APPCORE_DEFINES_H
+#define NUCLEO_F429ZI_APPCORE_DEFINES_H
 
 /** Name of the firmware. */
 #define FIRMWARE_NAME "nucleo-f429zi Stm32NetXHttpWebClient example"

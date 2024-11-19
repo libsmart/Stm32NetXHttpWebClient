@@ -8,8 +8,8 @@
  * @see main.cpp
  */
 
-#ifndef NUCLEO_F429ZI_APPLICATION_MAIN_HPP
-#define NUCLEO_F429ZI_APPLICATION_MAIN_HPP
+#ifndef NUCLEO_F429ZI_APPCORE_MAIN_HPP
+#define NUCLEO_F429ZI_APPCORE_MAIN_HPP
 
 #include "main.h"
 #include "tx_api.h"

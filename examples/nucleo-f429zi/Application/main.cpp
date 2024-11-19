@@ -21,6 +21,7 @@
 #include "RunOnce.hpp"
 #include "RunThreadOnce.hpp"
 #include "Stm32NetX.hpp"
+#include "Command/RegisterCommands.hpp"
 #include "Dns/Dns.hpp"
 
 
@@ -36,7 +37,8 @@ void setup() {
     dummyCpp = 0;
     dummyCandCpp = 0;
 
-    Serial3.begin();
+    ::AppCore::Command::RegisterCommands()();
+
     Serial3.begin();
     // print welcome message
     Serial3.print(F("startup "));
@@ -65,6 +67,14 @@ void loopOnce() {
              heth.Init.MACAddr[3], heth.Init.MACAddr[4], heth.Init.MACAddr[5]);
     Stm32NetX::NX->getConfig()->hostname = hostname;
     Stm32NetX::NX->begin();
+
+
+    // Set up the web client for webAPI
+    webClient.setLogger(&Logger);
+    webClient.setName("webClient");
+
+
+
 }
 
 /**
@@ -78,7 +88,8 @@ void loop() {
     static Stm32ThreadX::RunThreadOnce roWebClient;
 
     if (Stm32NetX::NX->isIpSet()) {
-        roWebClient.loop([]() {
+        // Large delay for test ;-)
+        roWebClient.loop(UINT32_MAX, []() {
             Stm32ItmLogger::logger.setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
                     ->println("::loop() roWebClient");
 
@@ -86,11 +97,13 @@ void loop() {
             Stm32NetX::Address ipAddress;
             ipAddress.nxd_ip_version = NX_IP_VERSION_V4;
             ipAddress.nxd_ip_address.v4 = Stm32NetX::NX->getIpInstance()->ipGatewayAddressGet();
+            /*
             dns.setLogger(&Logger);
             dns.setName(Stm32NetX::NX->getConfig()->hostname);
             dns.create();
             dns.serverAdd(&ipAddress);
             dns.hostByNameGet((CHAR *) "easy-smart.ch", &ipAddress, TX_TIMER_TICKS_PER_SECOND, NX_IP_VERSION_V4);
+            */
 
             Logger.printf("IP_ADDRESS: %lu.%lu.%lu.%lu\r\n",
                           (ipAddress.nxd_ip_address.v4 >> 24) & 0xff,
@@ -100,8 +113,8 @@ void loop() {
             );
 
 
-            webClient.setLogger(&Logger);
-            webClient.setName("webClient");
+            // webClient.setLogger(&Logger);
+            // webClient.setName("webClient");
             webClient.create();
 
             // ipAddress.nxd_ip_version = NX_IP_VERSION_V4;

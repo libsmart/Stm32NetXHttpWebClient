@@ -65,7 +65,6 @@ file(GLOB_RECURSE SOURCES "AZURE_RTOS/*.*" "NetXDuo/*.*" "Core/*.*" "Middlewares
     "Application/*.*"
     "../../src/*.*"
     "Lib/Stm32Common/src/*.*"
-    "Lib/Stm32ItmLogger/src/*.*"
     "Lib/Stm32Serial/src/*.*"
     "Lib/Stm32ThreadX/src/*.*"
     "Lib/Stm32NetX/src/*.*"
@@ -89,3 +88,9 @@ add_custom_command(TARGET ${PROJECT_NAME}.elf POST_BUILD
 Building ${BIN_FILE}")
 
 include(git_rev_macro.cmake)
+
+add_subdirectory(Lib/Stm32ItmLogger)
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE Stm32ItmLogger)
+
+add_subdirectory(Lib/Stm32Shell)
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE Stm32Shell)

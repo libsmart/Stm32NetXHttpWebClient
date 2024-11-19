@@ -5,6 +5,8 @@
 
 #include "Client.hpp"
 #include <climits>
+
+#include "Address.hpp"
 #include "Stm32NetX.hpp"
 
 using namespace Stm32NetXHttpWebClient;
@@ -14,19 +16,29 @@ UINT Client::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, 
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
             ->println("Stm32NetXHttpWebClient::Client::create()");
 
+
+    if (flags.isSet(IS_CREATED)) {
+        return NX_SUCCESS;
+    }
+
+    // Clear all flags
+    flags.clear(ULONG_MAX);
+
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_create
-    const auto ret = nx_web_http_client_create(this, client_name, ip_ptr, pool_ptr, window_size);
+    const auto ret = nx_web_http_client_create(static_cast<NX_WEB_HTTP_CLIENT*>(this), client_name, ip_ptr, pool_ptr,
+                                               window_size);
 
     if (ret != NX_SUCCESS) {
         log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
                 ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_create() = 0x%02x\r\n",
                          getName(), ret);
+#if __EXCEPTIONS
+        throw std::runtime_error("Stm32NetXHttpWebClient creation failed");
+#endif
+        return ret;
     }
 
-    // Clear all flags
-    flags.clear(ULONG_MAX);
     flags.set(IS_CREATED);
-
     return ret;
 }
 
@@ -38,7 +50,7 @@ UINT Client::del() {
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
             ->println("Stm32NetXHttpWebClient::Client::del()");
 
-    if(!flags.get(IS_CREATED)) {
+    if (!flags.isSet(IS_CREATED)) {
         return NX_SUCCESS;
     }
 
@@ -48,13 +60,162 @@ UINT Client::del() {
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_delete
     const auto ret = nx_web_http_client_delete(this);
 
+    std::memset(static_cast<NX_WEB_HTTP_CLIENT *>(this), 0, sizeof(NX_WEB_HTTP_CLIENT));
+
     if (ret != NX_SUCCESS) {
         log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
                 ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_delete() = 0x%02x\r\n",
                          getName(), ret);
+#if __EXCEPTIONS
+        throw std::runtime_error("Stm32NetXHttpWebClient deletion failed");
+#endif
+        return ret;
     }
     return ret;
 }
+
+bool Client::isReadyForConnect() {
+    return isCreated() && !isConnected() && Stm32NetX::NX->isIpSet();
+}
+
+bool Client::isConnected() {
+    Stm32NetX::Address peerIpAddress{};
+    ULONG peerPort = 0;
+    auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
+    if (ret == NX_SUCCESS) {
+        flags.set(IS_CONNECTED);
+        return true;
+    } else {
+        flags.clear(IS_CONNECTED);
+        return false;
+    }
+}
+
+bool Client::isCreated() {
+    return flags.isSet(IS_CREATED);
+}
+
+UINT Client::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option) {
+    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+            ->println("Stm32NetXHttpWebClient::Client::connect()");
+
+    Stm32NetX::Address serverIpAddress{server_ip};
+    if(!serverIpAddress.isValid()) {
+#if __EXCEPTIONS
+        throw std::runtime_error("Invalid ip address");
+#endif
+        return NX_IP_ADDRESS_ERROR;
+    }
+
+    if(server_port == 0) {
+#if __EXCEPTIONS
+        throw std::runtime_error("Invalid port");
+#endif
+        return NX_INVALID_PORT;
+    }
+
+    if (!isReadyForConnect()) {
+        Stm32NetX::Address peerIpAddress{};
+        ULONG peerPort = 0;
+
+        auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
+
+        if (ret == NX_SUCCESS) {
+            // Already connected => check peer
+            if (server_port == peerPort && peerIpAddress == serverIpAddress) {
+                // Already connected to this server => OK
+                return NX_SUCCESS;
+            } else {
+                // Connected to other peer => ERROR
+#if __EXCEPTIONS
+                throw std::runtime_error("Connection already established to other peer");
+#endif
+                return NX_NOT_CREATED;
+            }
+        } else {
+            // Not connected, but not ready for connect => ERROR
+#if __EXCEPTIONS
+            throw std::runtime_error("Not ready for connection");
+#endif
+            return NX_NOT_CREATED;
+        }
+    }
+
+    // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_connect
+    const auto ret = nx_web_http_client_connect(this,
+                                                server_ip,
+                                                server_port,
+                                                wait_option
+    );
+
+    if (ret != NX_SUCCESS) {
+        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
+                ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_connect() = 0x%02x\r\n",
+                         getName(), ret);
+#if __EXCEPTIONS
+        throw std::runtime_error("Stm32NetXHttpWebClient connection failed");
+#endif
+        return ret;
+    }
+
+    flags.set(IS_CONNECTED);
+    return ret;
+}
+
+UINT Client::connect(const Stm32NetX::Uri& uri) {
+    Stm32NetX::Address peerIpAddress{getLogger()};
+
+    UINT peerPort = uri.get_port();
+    if(peerPort == 0) {
+        // No port specified => use default
+        if(uri.get_scheme() == "http" ) {
+            peerPort = LIBSMART_STM32NETXHTTPWEBCLIENT_HTTP_PORT;
+        }
+        if(uri.get_scheme() == "https" ) {
+            peerPort = LIBSMART_STM32NETXHTTPWEBCLIENT_HTTPS_PORT;
+        }
+    }
+
+
+
+    peerIpAddress = uri.get_host().c_str();
+    if (!peerIpAddress.isValid()) {
+        // IP not valid => try dns
+        Stm32NetX::Dns *dns = Stm32NetX::NX->getDns();
+        volatile auto const ret = dns->hostByNameGet(const_cast<CHAR *>(uri.get_host().c_str()), &peerIpAddress, getTimeout(), NX_IP_VERSION_V4);
+    }
+
+    return connect(&peerIpAddress, peerPort, getTimeout());
+}
+
+Request *Client::initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::Uri& uri) {
+    log()->printf("Stm32NetXHttpWebClient::Client::initializeRequest()\r\n");
+    log()->printf("method: 0x%02x\r\n", std::visit([](auto &arg) -> auto { return (UINT) arg; }, method));
+    log()->printf("method: %s\r\n", std::visit([](auto &arg) -> auto { return (const char *) arg; }, method));
+    log()->printf("uri: %s\r\n", uri.to_string().c_str());
+    log()->printf("scheme: %s\r\n", uri.get_scheme().c_str());
+    log()->printf("host: %s\r\n", uri.get_host().c_str());
+
+
+    auto ret = request.initialize(
+        std::visit([](auto &arg) -> auto { return static_cast<Request::HTTP_METHOD>(arg); }, method),
+        uri.get_path().c_str(),
+        uri.get_host().c_str()
+    );
+
+
+    if (ret == NX_SUCCESS) {
+        return &request;
+    }
+    return nullptr;
+}
+
+Request *Client::requestStart(Stm32NetXHttp::Methods method, const Stm32NetX::Uri& uri) {
+    create();
+    connect(uri);
+    return initializeRequest(method, uri);
+}
+
 
 UINT Client::getStart(NXD_ADDRESS *ip_address, UINT server_port, CHAR *resource, CHAR *host, CHAR *username,
                       CHAR *password, ULONG wait_option) {
@@ -87,39 +248,12 @@ UINT Client::responseBodyGet(NX_PACKET **packet_ptr, ULONG wait_option) {
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_response_body_get
     const auto ret = nx_web_http_client_response_body_get(this, packet_ptr, wait_option);
 
-    if (ret != NX_SUCCESS) {
+    if (ret != NX_SUCCESS && ret != NX_NO_PACKET && ret != NX_WEB_HTTP_GET_DONE) {
         log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
                 ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_response_body_get() = 0x%02x\r\n",
                          getName(), ret);
     }
     return ret;
-}
-
-
-UINT Client::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::Client::connect()");
-
-    // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_connect
-    const auto ret = nx_web_http_client_connect(this,
-                                                server_ip,
-                                                server_port,
-                                                wait_option
-    );
-
-    if (ret != NX_SUCCESS) {
-        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf("Stm32NetXHttpWebClient::Client[%s]: nx_web_http_client_connect() = 0x%02x\r\n",
-                         getName(), ret);
-    }
-
-    flags.set(IS_CONNECTED);
-
-    return ret;
-}
-
-bool Client::isReadyForConnect() {
-    return flags.isSet(IS_CREATED) && !flags.isSet(IS_CONNECTED) && Stm32NetX::NX->isIpSet();
 }
 
 
@@ -184,7 +318,8 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
 
     if (metadata_size > sizeof(crypto_metadata)) {
         log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf("metadata_size = %lu  >  sizeof(crypto_metadata) = %lu\r\n", metadata_size, sizeof(crypto_metadata));
+                ->printf("metadata_size = %lu  >  sizeof(crypto_metadata) = %lu\r\n", metadata_size,
+                         sizeof(crypto_metadata));
     }
 
     // Create a TLS session
@@ -229,15 +364,15 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
 
     // Add a CA Certificate to our trusted store for verifying incoming server certificates
     // nx_secure_x509_certificate_initialize(&trusted_certificate, trusted_cert_der,
-                                          // trusted_cert_der_len, NX_NULL, 0, NULL, 0,
-                                          // NX_SECURE_X509_KEY_TYPE_NONE);
+    // trusted_cert_der_len, NX_NULL, 0, NULL, 0,
+    // NX_SECURE_X509_KEY_TYPE_NONE);
     // nx_secure_tls_trusted_certificate_add(tls_session, &trusted_certificate);
 
     // Need to allocate space for the certificate coming in from the remote host
     // nx_secure_tls_remote_certificate_allocate(tls_session, &remote_certificate,
-                                              // remote_cert_buffer, sizeof(remote_cert_buffer));
+    // remote_cert_buffer, sizeof(remote_cert_buffer));
     // nx_secure_tls_remote_certificate_allocate(tls_session, &remote_issuer,
-                                              // remote_issuer_buffer, sizeof(remote_issuer_buffer));
+    // remote_issuer_buffer, sizeof(remote_issuer_buffer));
 
     return NX_SUCCESS;
 }

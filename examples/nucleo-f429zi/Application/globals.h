@@ -8,8 +8,8 @@
  * @see globals.c
  */
 
-#ifndef NUCLEO_F429ZI_APPLICATION_GLOBALS_H
-#define NUCLEO_F429ZI_APPLICATION_GLOBALS_H
+#ifndef NUCLEO_F429ZI_APPCORE_GLOBALS_H
+#define NUCLEO_F429ZI_APPCORE_GLOBALS_H
 
 #include <stddef.h>
 #include "defines.h"

@@ -6,11 +6,19 @@
 #ifndef LIBSMART_STM32NETXHTTPWEBCLIENT_REQUEST_HPP
 #define LIBSMART_STM32NETXHTTPWEBCLIENT_REQUEST_HPP
 
-#include "Client.hpp"
+#include "nx_web_http_client.h"
 
 namespace Stm32NetXHttpWebClient {
-    class Request : public Client {
+    class Client;
+
+    class Request {
     public:
+        virtual ~Request() = default;
+
+        explicit Request(Client *client)
+            : client(client) {
+        }
+
         UINT initialize(UINT method,
                         CHAR *resource,
                         UINT resource_length,
@@ -56,6 +64,9 @@ namespace Stm32NetXHttpWebClient {
                         ULONG wait_option);
 
         // UINT chunkedSet();
+
+    protected:
+        Client *client;
     };
 }
 #endif

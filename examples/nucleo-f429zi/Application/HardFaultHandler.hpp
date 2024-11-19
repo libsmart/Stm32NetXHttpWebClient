@@ -14,8 +14,8 @@
  *          Copyright (c) 2018 Ferenc Nemeth - https://github.com/ferenc-nemeth
  */
 
-#ifndef FAULTHANDLER_H_
-#define FAULTHANDLER_H_
+#ifndef NUCLEO_F429ZI_APPCORE_FAULTHANDLER_HPP
+#define NUCLEO_F429ZI_APPCORE_FAULTHANDLER_HPP
 
 #include "main.h"
 
@@ -64,5 +64,5 @@ extern "C" {
 }
 #endif
 
-#endif /* FAULTHANDLER_H_ */
+#endif
 

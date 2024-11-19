@@ -8,17 +8,18 @@
  * @see globals.cpp
  */
 
-#ifndef NUCLEO_F429ZI_APPLICATION_GLOBALS_HPP
-#define NUCLEO_F429ZI_APPLICATION_GLOBALS_HPP
+#ifndef NUCLEO_F429ZI_APPCORE_GLOBALS_HPP
+#define NUCLEO_F429ZI_APPCORE_GLOBALS_HPP
 
 #include <Client.hpp>
 
 #include "globals.h"
 #include "Stm32ItmLogger.hpp"
 #include <cstdint>
-
+#include "usart.h"
 #include "Dns/Dns.hpp"
 #include "Driver/Stm32HalUartItDriver.hpp"
+#include "ezShell/Shell.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -31,10 +32,13 @@ extern uint32_t dummyCpp;
  */
 inline Stm32ItmLogger::Stm32ItmLogger &Logger = Stm32ItmLogger::logger;
 
+/* ezShell over serial */
+inline Stm32Common::StreamSession::Manager<Stm32Shell::ezShell::Shell, 1> microrlStreamSessionManager(&Logger);
+// inline Stm32Common::StreamSession::Manager<Stm32Common::StreamSession::EchoStreamSession, 1> serial4SessionManager;
 inline Stm32Serial::Stm32HalUartItDriver uart3Driver(&huart3, "uart3Driver");
-inline Stm32Serial::Stm32Serial Serial3(&uart3Driver);
+inline Stm32Serial::Stm32Serial Serial3(&uart3Driver, &microrlStreamSessionManager);
 
-inline Stm32NetX::Dns dns;
+// inline Stm32NetX::Dns dns;
 inline Stm32NetXHttpWebClient::Client webClient;
 
 #ifdef __cplusplus
