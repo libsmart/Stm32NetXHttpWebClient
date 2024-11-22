@@ -6,6 +6,8 @@
 #ifndef LIBSMART_STM32NETXHTTPWEBCLIENT_CLIENT_HPP
 #define LIBSMART_STM32NETXHTTPWEBCLIENT_CLIENT_HPP
 
+#include <BaseClient.hpp>
+
 #include "EventFlags.hpp"
 #include "Secure/X509.hpp"
 #include "Loggable.hpp"
@@ -13,7 +15,7 @@
 #include "nx_web_http_client.h"
 #include "Uri.hpp"
 #include "RequestMethods.hpp"
-#include "Request.hpp"
+#include "Packet/Packet.hpp"
 
 
 #define NX_WEB_HTTP_SESSION_MAX 1
@@ -23,36 +25,26 @@ extern const NX_SECURE_TLS_CRYPTO nx_crypto_tls_ciphers;
 #endif
 
 namespace Stm32NetXHttpWebClient {
-    class Client : protected NX_WEB_HTTP_CLIENT, public Stm32ItmLogger::Loggable, public Stm32Common::Nameable {
-    public:
-        Client() : NX_WEB_HTTP_CLIENT_STRUCT(), Nameable("Stm32NetXHttpWebClient::Client") {
-            registerInstance(this);
-        }
-
+    class Client : public BaseClient {
         friend class Request;
 
-        using Flags = enum: ULONG {
-            NONE = 0,
-            IS_CREATED = 1UL << 0,
-            IS_CONNECTED = 1UL << 1,
-            IS_INITIALIZED = 1UL << 2,
-            THE_END = 1UL << 31
-        };
+    public:
+        Client() = default;
 
-        /**
-         * @brief Creates an HTTP client.
-         *
-         * This function initializes an HTTP client instance with the specified name, IP,
-         * packet pool, and window size.
-         *
-         * @param client_name Pointer to the name of the client.
-         * @param ip_ptr Pointer to the NX_IP structure.
-         * @param pool_ptr Pointer to the NX_PACKET_POOL structure.
-         * @param window_size Size of the window.
-         * @return The return value is of type UINT. It returns NX_SUCCESS on successful creation of the client,
-         *         otherwise it returns an error code.
-         */
-        UINT create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, ULONG window_size);
+        /*
+        explicit Client(Stm32NetX::NetX *nx)
+            : BaseClient(nx) { ; }
+
+        Client(Stm32NetX::NetX *nx, Stm32ItmLogger::LoggerInterface *logger)
+            : BaseClient(nx, logger) { ; }
+
+        Client(Stm32NetX::NetX *nx, const char *name)
+            : BaseClient(nx, name) { ; }
+
+        Client(Stm32NetX::NetX *nx, const char *name, Stm32ItmLogger::LoggerInterface *logger)
+            : BaseClient(nx, name, logger) { ; }
+            */
+
 
         /**
          * @brief Creates an HTTP client instance.
@@ -64,72 +56,50 @@ namespace Stm32NetXHttpWebClient {
          */
         UINT create();
 
-        /**
-         * @brief Deletes the HTTP client instance.
-         *
-         * This method deletes the HTTP client instance if it has been created. It clears all associated flags
-         * and calls the underlying NetX Duo function to delete the client. If the client was not created, it
-         * simply returns success. Any errors encountered during the deletion process are logged.
-         *
-         * @return The return value is of type UINT. It returns NX_SUCCESS if the client was successfully deleted
-         *         or if the client was not created. In case of errors during deletion, a corresponding error code is returned.
-         */
-        UINT del();
+
+        UINT packetAllocate(NX_PACKET **packet_ptr);
+
+        UINT packetAllocate(Stm32NetX::Packet &packet);
+
+        UINT headerAdd(const char *field_name, const char *field_value);
 
 
-        /**
-         * @brief Checks if the client is ready to establish a connection.
-         *
-         * This method determines if the client is in a state where it is ready to connect by
-         * verifying that the client is created, not currently connected, and that the IP is set.
-         *
-         * @return Returns true if the client is ready to connect; otherwise, returns false.
-         */
-        bool isReadyForConnect();
+        UINT initialize(HTTP_METHOD method, const CHAR *resource, const CHAR *host, const UINT input_size,
+                        const CHAR *username, const CHAR *password);
+
+        UINT initialize(HTTP_METHOD method, const CHAR *resource, const CHAR *host, const UINT input_size);
+
+        UINT initialize(HTTP_METHOD method, const CHAR *resource, const CHAR *host);
 
 
-        bool isConnected();
-        bool isCreated();
+        UINT packetSend(Stm32NetX::Packet *packet);
+
+        UINT send();
 
 
-        /**
-         * @brief Connects to an HTTP server.
-         *
-         * This function establishes a connection to the specified HTTP server using the provided
-         * server IP address, server port, and wait option.
-         *
-         * @param server_ip Pointer to the NXD_ADDRESS structure containing the server's IP address.
-         * @param server_port The port number of the server.
-         * @param wait_option Specifies the behavior for waiting if the connection cannot be established immediately.
-         * @return The return value is of type UINT. It returns NX_SUCCESS on successful connection to the server,
-         *         otherwise it returns an error code.
-         */
-        UINT connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option);
+        UINT connect(const Stm32NetX::Uri &uri);
 
-        UINT connect(const Stm32NetX::Uri& uri);
+        void initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::Uri &uri, UINT input_size);
 
-        Request *initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::Uri& uri);
+        void requestStart(Stm32NetXHttp::Methods method, const Stm32NetX::Uri &uri);
 
-        Request *requestStart(Stm32NetXHttp::Methods method, const Stm32NetX::Uri& uri);
+        void requestStart(Stm32NetXHttp::Methods method, const Stm32NetX::Uri &uri, UINT input_size);
 
 
-        ULONG getTimeout() {return LIBSMART_STM32NETXHTTPWEBCLIENT_TIMEOUT;}
-
-
-
-
-        UINT getStart(NXD_ADDRESS *ip_address, UINT server_port, CHAR *resource, CHAR *host, CHAR *username,
-                      CHAR *password, ULONG wait_option);
-
+        ULONG getTimeout() { return LIBSMART_STM32NETXHTTPWEBCLIENT_TIMEOUT; }
 
         UINT responseBodyGet(NX_PACKET **packet_ptr, ULONG wait_option);
+
+        UINT responseBodyGet(NX_PACKET **packet_ptr);
+
+        UINT responseBodyGet(Stm32NetX::Packet &packet);
 
 
         UINT awaitFlag(const ULONG requestedFlags) { return flags.await(requestedFlags); }
 
     protected:
-        Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};
-        Request request{this};
+        // Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};
+
 
     private:
         inline static Client *httpWebClientRegistry[5]{};
@@ -189,16 +159,6 @@ namespace Stm32NetXHttpWebClient {
         }
 
 #if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
-
-    public:
-        UINT getSecureStart(NXD_ADDRESS *ip_address, UINT server_port, CHAR *resource, CHAR *host,
-                            CHAR *username, CHAR *password,
-                            UINT (*tls_setup)(NX_WEB_HTTP_CLIENT *client_ptr, NX_SECURE_TLS_SESSION *tls_session),
-                            ULONG wait_option);
-
-        UINT getSecureStart(NXD_ADDRESS *ip_address, UINT server_port, CHAR *resource, CHAR *host,
-                            CHAR *username, CHAR *password,
-                            ULONG wait_option);
 
     private:
         UINT tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session);

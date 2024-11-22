@@ -8,6 +8,7 @@
 #include "globals.hpp"
 #include "Command/AbstractCommand.hpp"
 #include "ezShell/Shell.hpp"
+#include "Packet/Packet.hpp"
 
 namespace AppCore::Command {
     class Test : public Stm32Shell::Command::AbstractCommand {
@@ -24,6 +25,10 @@ namespace AppCore::Command {
             try {
                 if (std::strcmp(argv[1], "timestamp") == 0) {
                     ret = runTimestamp();
+                }
+
+                if (std::strcmp(argv[1], "post") == 0) {
+                    ret = runPost();
                 }
             } catch (const std::exception &e) {
                 ret = runReturn::ERROR;
@@ -67,11 +72,11 @@ namespace AppCore::Command {
                         }
             */
 
-            Stm32NetXHttpWebClient::Request *req = webClient.requestStart(
+            webClient.requestStart(
                 Stm32NetXHttp::Method::GET{}, "Http://R8.office.easy-smart.cloud/timestamp.php"
             );
             // Stm32NetXHttpWebClient::Request *req = webClient.requestStart(
-                // Stm32NetXHttp::Method::GET{}, "http://R8.office.easy-smart.cloud/timestamp.php"
+            // Stm32NetXHttp::Method::GET{}, "http://R8.office.easy-smart.cloud/timestamp.php"
             // );
             // Stm32NetXHttpWebClient::Request *req = webClient.requestStart(
             // Stm32NetXHttp::Method::GET{}, "http://R8.office.easy-smart.cloud:80/timestamp.php"
@@ -79,12 +84,9 @@ namespace AppCore::Command {
             // Stm32NetXHttpWebClient::Request *req = webClient.requestStart(
             // Stm32NetXHttp::Method::GET{}, "http://10.82.2.198:80/timestamp.php"
             // );
-            if (req == nullptr) {
-                return runReturn::ERROR;
-            }
 
 
-            ret = req->headerAdd("Connection", "keep-alive");
+            ret = webClient.headerAdd("Connection", "keep-alive");
             if (ret != NX_SUCCESS) {
                 return runReturn::ERROR;
             }
@@ -104,13 +106,13 @@ namespace AppCore::Command {
             //     return runReturn::ERROR;
             // }
 
-            ret = req->headerAdd("Accept-Encoding", "identity;q=1.0, *;q=0");
+            ret = webClient.headerAdd("Accept-Encoding", "identity;q=1.0, *;q=0");
             if (ret != NX_SUCCESS) {
                 return runReturn::ERROR;
             }
 
 
-            ret = req->send(NX_WAIT_FOREVER);
+            ret = webClient.send();
             if (ret != NX_SUCCESS) {
                 return runReturn::ERROR;
             }
@@ -141,6 +143,78 @@ namespace AppCore::Command {
                     out()->println();
 
                     nx_packet_release(packet);
+                }
+            } while (ret != NX_WEB_HTTP_GET_DONE && ret != NX_WEB_HTTP_ERROR);
+
+            if (ret == NX_WEB_HTTP_GET_DONE) {
+                webClient.isConnected();
+                return runReturn::FINISHED;
+            }
+
+            return runReturn::ERROR;
+        }
+
+
+        runReturn runPost() {
+            UINT ret = NX_SUCCESS;
+
+            char body[256]{};
+            snprintf(body, sizeof(body), R"({
+"controllerId": "%s",
+"secret": "%s",
+})", "abc123", "secret");
+            const UINT input_size = strlen(body);
+
+
+            webClient.create();
+
+            Stm32NetX::Packet packet{};
+            webClient.packetAllocate(packet);
+            packet.dataAppend(body, input_size);
+
+
+            webClient.requestStart(
+                Stm32NetXHttp::Method::POST{},
+                "Http://R8.office.easy-smart.cloud/post.php",
+                input_size
+            );
+
+            webClient.headerAdd("Accept-Encoding", "identity;q=1.0, *;q=0");
+            webClient.headerAdd("Content-Type", "application/json");
+
+            webClient.send();
+            webClient.packetSend(&packet);
+
+            /*
+            Stm32NetX::Packet packet{};
+            req->packetAllocate(packet);
+
+            ret = packet.dataAppend(body, input_size);
+            if (ret != NX_SUCCESS) {
+                return runReturn::ERROR;
+            }
+
+            req->packetSend(&packet);
+            */
+
+
+            packet = nullptr;
+            // NX_PACKET *pkt{nullptr};
+            do {
+                ret = webClient.responseBodyGet(packet);
+                if (packet.getNxPacket() != NX_NULL) {
+                    char buffer[2048];
+                    ULONG bytes_copied{};
+                    packet.data_retrieve(buffer, &bytes_copied);
+
+                    log()->printf("Received %lu bytes\r\n", bytes_copied);
+                    log()->printf("%.*s", bytes_copied, buffer);
+                    log()->println();
+                    log()->println();
+                    out()->printf("%.*s", bytes_copied, buffer);
+                    out()->println();
+
+                    packet.release();
                 }
             } while (ret != NX_WEB_HTTP_GET_DONE && ret != NX_WEB_HTTP_ERROR);
 

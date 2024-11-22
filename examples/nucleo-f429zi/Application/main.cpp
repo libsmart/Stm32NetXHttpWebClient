@@ -119,9 +119,10 @@ void loop() {
 
             // ipAddress.nxd_ip_version = NX_IP_VERSION_V4;
             // ipAddress.nxd_ip_address.v4 = IP_ADDRESS(10, 82, 2, 198);
-            auto ret = webClient.getSecureStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/",
-                                                (CHAR *) "easy-smart.ch",
-                                                NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
+            UINT ret=NX_SUCCESS;
+            // auto ret = webClient.getSecureStart(&ipAddress, NX_WEB_HTTP_SERVER_PORT, (char *) "/",
+                                                // (CHAR *) "easy-smart.ch",
+                                                // NX_NULL, NX_NULL, TX_TIMER_TICKS_PER_SECOND);
             if (ret == NX_SUCCESS) {
                 NX_PACKET *packet = nullptr;
                 do {
