@@ -1,0 +1,4 @@
+{
+"controllerId": "abc123",
+"secret": "secret",
+}

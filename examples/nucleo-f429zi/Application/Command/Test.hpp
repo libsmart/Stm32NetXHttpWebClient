@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <lwjson/lwjson.h>
+
 #include "globals.hpp"
 #include "Command/AbstractCommand.hpp"
 #include "ezShell/Shell.hpp"
@@ -29,6 +31,10 @@ namespace AppCore::Command {
 
                 if (std::strcmp(argv[1], "post") == 0) {
                     ret = runPost();
+                }
+
+                if (std::strcmp(argv[1], "time") == 0) {
+                    ret = runTime();
                 }
             } catch (const std::exception &e) {
                 ret = runReturn::ERROR;
@@ -213,6 +219,95 @@ namespace AppCore::Command {
                     log()->println();
                     out()->printf("%.*s", bytes_copied, buffer);
                     out()->println();
+
+                    packet.release();
+                }
+            } while (ret != NX_WEB_HTTP_GET_DONE && ret != NX_WEB_HTTP_ERROR);
+
+            if (ret == NX_WEB_HTTP_GET_DONE) {
+                webClient.isConnected();
+                return runReturn::FINISHED;
+            }
+
+            return runReturn::ERROR;
+        }
+
+
+        runReturn runTime() {
+            UINT ret = NX_SUCCESS;
+
+            webClient.create();
+
+            webClient.requestStart(
+                Stm32NetXHttp::Method::GET{},
+                "Http://R8.office.easy-smart.cloud/terminal/info.php"
+            );
+
+            webClient.headerAdd("Accept-Encoding", "identity;q=1.0, *;q=0");
+
+            webClient.send();
+
+            Stm32NetX::Packet packet{};
+
+            packet = nullptr;
+            // NX_PACKET *pkt{nullptr};
+            do {
+                ret = webClient.responseBodyGet(packet);
+                if (packet.getNxPacket() != NX_NULL) {
+                    char buffer[2048]{};
+                    ULONG bytes_copied{};
+                    packet.data_retrieve(buffer, &bytes_copied);
+
+                    log()->printf("Received %lu bytes\r\n", bytes_copied);
+                    log()->printf("%.*s", bytes_copied, buffer);
+                    log()->println();
+                    log()->println();
+                    out()->printf("%.*s", bytes_copied, buffer);
+                    out()->println();
+
+
+                    /* LwJSON instance and tokens */
+                    static lwjson_token_t tokens[128];
+                    static lwjson_t lwjson;
+
+                    lwjson_init(&lwjson, tokens, LWJSON_ARRAYSIZE(tokens));
+                    if (lwjson_parse(&lwjson, buffer) == lwjsonOK) {
+                        const lwjson_token_t *tSuccessful{};
+                        const lwjson_token_t *t{};
+                        log()->printf("JSON parsed..\r\n");
+
+                        /* Find key "successful" in JSON */
+                        if ((tSuccessful = lwjson_find(&lwjson, "successful")) != NULL) {
+                            log()->printf("Key found with data type: %d\r\n", (int) tSuccessful->type);
+                        }
+
+                        if (tSuccessful->type == LWJSON_TYPE_TRUE) {
+                            /* Find key "serverTime" in JSON */
+                            if ((t = lwjson_find(&lwjson, "resultObject.info.serverTime")) != NULL) {
+                                log()->printf("Key found with data type: %d\r\n", (int) t->type);
+                                if (t->type == LWJSON_TYPE_STRING) {
+                                    size_t datetimestring_len=0;
+                                    const char *datetimestring = lwjson_get_val_string(t, &datetimestring_len);
+                                    out()->printf("Server time: %.*s\r\n", static_cast<int>(datetimestring_len), datetimestring);
+                                }
+                            }
+
+                            /* Find key "chronoVersion" in JSON */
+                            if ((t = lwjson_find(&lwjson, "resultObject.info.chronoVersion")) != NULL) {
+                                log()->printf("Key found with data type: %d\r\n", (int) t->type);
+                                if (t->type == LWJSON_TYPE_NUM_INT) {
+                                    const int chronoversion = lwjson_get_val_int(t);
+                                    out()->printf("Chrono version: %d\r\n", chronoversion);
+                                }
+                            }
+
+                        }
+
+                        delay(100);
+
+                        /* Call this when not used anymore */
+                        lwjson_free(&lwjson);
+                    }
 
                     packet.release();
                 }

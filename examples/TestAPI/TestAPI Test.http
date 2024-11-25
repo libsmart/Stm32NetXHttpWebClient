@@ -1,0 +1,8 @@
+### GET request to example server
+GET http://localhost/terminal/info.php
+User-Agent: ADMIA-Terminal v0.0.0
+Accept-Encoding: identity;q=1.0, *;q=0
+Accept: application/json
+Content-Type: application/json
+
+###

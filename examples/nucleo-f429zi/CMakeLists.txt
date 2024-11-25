@@ -94,3 +94,6 @@ target_link_libraries(${PROJECT_NAME}.elf PRIVATE Stm32ItmLogger)
 
 add_subdirectory(Lib/Stm32Shell)
 target_link_libraries(${PROJECT_NAME}.elf PRIVATE Stm32Shell)
+
+add_subdirectory(Lib/lwjson/lwjson)
+target_link_libraries(${PROJECT_NAME}.elf PRIVATE lwjson)
