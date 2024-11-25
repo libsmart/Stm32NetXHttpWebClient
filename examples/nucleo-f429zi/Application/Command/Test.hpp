@@ -164,25 +164,38 @@ namespace AppCore::Command {
         runReturn runPost() {
             UINT ret = NX_SUCCESS;
 
-            char body[256]{};
-            snprintf(body, sizeof(body), R"({
-"controllerId": "%s",
-"secret": "%s",
-})", "abc123", "secret");
-            const UINT input_size = strlen(body);
+            // char body[256]{};
+            //             snprintf(body, sizeof(body), R"({
+            // "controllerId": "%s",
+            // "secret": "%s",
+            // })", "abc123", "secret");
+            // const UINT input_size = strlen(body);
 
 
             webClient.create();
 
             Stm32NetX::Packet packet{};
             webClient.packetAllocate(packet);
-            packet.dataAppend(body, input_size);
+            // packet.dataAppend(body, input_size);
+
+
+            log()->printf("packet.lengthGet() = %lu | packet.availableForWrite() = %lu\r\n",
+                          packet.lengthGet(), packet.availableForWrite());
+
+
+            packet.printf(R"({
+"controllerId": "%s",
+"secret": "%s",
+})", "abc123", "secret");
+
+            log()->printf("packet.lengthGet() = %lu | packet.availableForWrite() = %lu\r\n",
+                          packet.lengthGet(), packet.availableForWrite());
 
 
             webClient.requestStart(
                 Stm32NetXHttp::Method::POST{},
                 "Http://R8.office.easy-smart.cloud/post.php",
-                input_size
+                packet.lengthGet()
             );
 
             webClient.headerAdd("Accept-Encoding", "identity;q=1.0, *;q=0");
@@ -286,9 +299,10 @@ namespace AppCore::Command {
                             if ((t = lwjson_find(&lwjson, "resultObject.info.serverTime")) != NULL) {
                                 log()->printf("Key found with data type: %d\r\n", (int) t->type);
                                 if (t->type == LWJSON_TYPE_STRING) {
-                                    size_t datetimestring_len=0;
+                                    size_t datetimestring_len = 0;
                                     const char *datetimestring = lwjson_get_val_string(t, &datetimestring_len);
-                                    out()->printf("Server time: %.*s\r\n", static_cast<int>(datetimestring_len), datetimestring);
+                                    out()->printf("Server time: %.*s\r\n", static_cast<int>(datetimestring_len),
+                                                  datetimestring);
                                 }
                             }
 
@@ -300,7 +314,6 @@ namespace AppCore::Command {
                                     out()->printf("Chrono version: %d\r\n", chronoversion);
                                 }
                             }
-
                         }
 
                         delay(100);
