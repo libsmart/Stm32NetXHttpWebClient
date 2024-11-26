@@ -13,7 +13,7 @@
 #include "Loggable.hpp"
 #include "Nameable.hpp"
 #include "nx_web_http_client.h"
-#include "Uri.hpp"
+#include "Address/Uri.hpp"
 #include "RequestMethods.hpp"
 #include "Packet/Packet.hpp"
 
@@ -72,7 +72,7 @@ namespace Stm32NetXHttpWebClient {
         UINT initialize(HTTP_METHOD method, const CHAR *resource, const CHAR *host);
 
 
-        UINT packetSend(Stm32NetX::Packet *packet);
+        UINT packetSend(Stm32NetX::Packet &packet);
 
         UINT send();
 

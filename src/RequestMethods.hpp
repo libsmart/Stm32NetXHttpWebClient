@@ -62,4 +62,26 @@ namespace Stm32NetXHttp {
         Method::DELETE,
         Method::HEAD
     >;
+
+    namespace Method {
+        inline Methods byId(UINT id) {
+            static const std::unordered_map<UINT, Methods> methodMap = {
+                {NX_WEB_HTTP_METHOD_NONE, Method::NONE{}},
+                {NX_WEB_HTTP_METHOD_GET, Method::GET{}},
+                {NX_WEB_HTTP_METHOD_PUT, Method::PUT{}},
+                {NX_WEB_HTTP_METHOD_POST, Method::POST{}},
+                {NX_WEB_HTTP_METHOD_DELETE, Method::DELETE{}},
+                {NX_WEB_HTTP_METHOD_HEAD, Method::HEAD{}}
+            };
+
+            auto it = methodMap.find(id);
+            if (it != methodMap.end()) {
+                return it->second;
+            }
+#if __EXCEPTIONS
+            throw std::invalid_argument("Invalid HTTP method ID");
+#endif
+            return Method::NONE{};
+        }
+    }
 }

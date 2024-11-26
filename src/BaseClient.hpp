@@ -253,6 +253,8 @@ namespace Stm32NetXHttpWebClient {
          */
         virtual UINT connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option);
 
+
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
         using secure_connect_callback = UINT (*)(NX_WEB_HTTP_CLIENT *client_ptr, NX_SECURE_TLS_SESSION *tls);
 
         /**
@@ -270,6 +272,7 @@ namespace Stm32NetXHttpWebClient {
          */
         virtual UINT secure_connect(NXD_ADDRESS *server_ip, UINT server_port,
                                     secure_connect_callback tls_setup, ULONG wait_option);
+#endif
 
     protected:
         Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};

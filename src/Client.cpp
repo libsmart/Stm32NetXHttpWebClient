@@ -1,12 +1,12 @@
 /*
  * SPDX-FileCopyrightText: 2024 Roland Rusch, easy-smart solution GmbH <roland.rusch@easy-smart.ch>
- * SPDX-License-Identifier: AGPL-3.0-only
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "Client.hpp"
 #include <climits>
 
-#include "Address.hpp"
+#include "Address/Address.hpp"
 #include "Stm32NetX.hpp"
 
 using namespace Stm32NetXHttpWebClient;
@@ -39,10 +39,10 @@ UINT Client::initialize(HTTP_METHOD method, const CHAR *resource, const CHAR *ho
     return initialize(method, resource, host, 0);
 }
 
-UINT Client::packetSend(Stm32NetX::Packet *packet) {
-    const auto ret = request_packet_send(static_cast<NX_PACKET *>(*packet), 0, getTimeout());
+UINT Client::packetSend(Stm32NetX::Packet &packet) {
+    const auto ret = request_packet_send(static_cast<NX_PACKET *>(packet), 0, getTimeout());
     if (ret == NX_SUCCESS) {
-        packet->forget();
+        packet.forget();
     }
     return ret;
 }
@@ -52,7 +52,7 @@ UINT Client::send() {
 }
 
 UINT Client::connect(const Stm32NetX::Uri &uri) {
-    Stm32NetX::Address peerIpAddress{getLogger()};
+    Stm32NetX::Address peerIpAddress{};
 
     UINT peerPort = uri.get_port();
     if (peerPort == 0) {
@@ -64,7 +64,6 @@ UINT Client::connect(const Stm32NetX::Uri &uri) {
             peerPort = LIBSMART_STM32NETXHTTPWEBCLIENT_HTTPS_PORT;
         }
     }
-
 
     peerIpAddress = uri.get_host().c_str();
     if (!peerIpAddress.isValid()) {
@@ -78,15 +77,20 @@ UINT Client::connect(const Stm32NetX::Uri &uri) {
 }
 
 void Client::initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::Uri &uri, UINT input_size) {
-    log()->printf("Stm32NetXHttpWebClient::Client::initializeRequest()\r\n");
-    log()->printf("method: 0x%02x\r\n", std::visit([](auto &arg) -> auto { return (UINT) arg; }, method));
-    log()->printf("method: %s\r\n", std::visit([](auto &arg) -> auto { return (const char *) arg; }, method));
-    log()->printf("uri: %s\r\n", uri.to_string().c_str());
-    log()->printf("scheme: %s\r\n", uri.get_scheme().c_str());
-    log()->printf("host: %s\r\n", uri.get_host().c_str());
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+            ->printf("Stm32NetXHttpWebClient::Client::initializeRequest(%s, \"%s\", %d)\r\n",
+                     std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, method),
+                     uri.to_string().c_str(),
+                     input_size
+            );
 
+    // log()->printf("method: 0x%02x\r\n", std::visit([](auto &arg) -> auto { return (UINT) arg; }, method));
+    // log()->printf("method: %s\r\n", std::visit([](auto &arg) -> auto { return (const char *) arg; }, method));
+    // log()->printf("uri: %s\r\n", uri.to_string().c_str());
+    // log()->printf("scheme: %s\r\n", uri.get_scheme().c_str());
+    // log()->printf("host: %s\r\n", uri.get_host().c_str());
 
-    auto ret = initialize(
+    initialize(
         std::visit([](auto &arg) -> auto { return static_cast<HTTP_METHOD>(arg); }, method),
         uri.get_path().c_str(),
         uri.get_host().c_str(),

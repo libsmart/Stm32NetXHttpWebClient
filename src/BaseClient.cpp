@@ -1,13 +1,16 @@
 /*
  * SPDX-FileCopyrightText: 2024 Roland Rusch, easy-smart solution GmbH <roland.rusch@easy-smart.ch>
- * SPDX-License-Identifier: AGPL-3.0-only
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "BaseClient.hpp"
 #include <climits>
 #include <stdexcept>
-#include "Address.hpp"
+#include "Address/Address.hpp"
+#include "RequestMethods.hpp"
+#include "Address/AddressPrinter.hpp"
 
+using namespace Stm32NetX;
 using namespace Stm32NetXHttpWebClient;
 
 bool BaseClient::isReadyForConnect() {
@@ -15,16 +18,15 @@ bool BaseClient::isReadyForConnect() {
 }
 
 bool BaseClient::isConnected() {
-    Stm32NetX::Address peerIpAddress{};
+    Address peerIpAddress{};
     ULONG peerPort = 0;
     auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
     if (ret == NX_SUCCESS) {
         flags.set(IS_CONNECTED);
         return true;
-    } else {
-        flags.clear(IS_CONNECTED);
-        return false;
     }
+    flags.clear(IS_CONNECTED);
+    return false;
 }
 
 bool BaseClient::isCreated() {
@@ -33,7 +35,7 @@ bool BaseClient::isCreated() {
 
 UINT BaseClient::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, ULONG window_size) {
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::create()");
+            ->printf("Stm32NetXHttpWebClient::BaseClient::create(%s)\r\n", client_name);
 
     if (flags.isSet(IS_CREATED)) {
         return NX_SUCCESS;
@@ -120,7 +122,7 @@ UINT BaseClient::request_packet_allocate(NX_PACKET **packet_ptr, ULONG wait_opti
 
 UINT BaseClient::request_chunked_set(UINT chunk_size, NX_PACKET *packet_ptr) {
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::request_chunked_set()");
+            ->printf("Stm32NetXHttpWebClient::BaseClient::request_chunked_set(%d)\r\n", chunk_size);
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_request_chunked_set
     const auto ret = nx_web_http_client_request_chunked_set(
@@ -145,7 +147,8 @@ UINT BaseClient::request_chunked_set(UINT chunk_size, NX_PACKET *packet_ptr) {
 UINT BaseClient::request_header_add(CHAR *field_name, UINT name_length, CHAR *field_value, UINT value_length,
                                     UINT wait_option) {
     log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::request_header_add()");
+            ->printf("Stm32NetXHttpWebClient::BaseClient::request_header_add(\"%s\", \"%s\")\r\n",
+                     field_name, field_value);
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_request_header_add
     const auto ret = nx_web_http_client_request_header_add(
@@ -170,8 +173,12 @@ UINT BaseClient::request_header_add(CHAR *field_name, UINT name_length, CHAR *fi
 UINT BaseClient::request_initialize(UINT method, CHAR *resource, CHAR *host, UINT input_size,
                                     UINT transfer_encoding_trunked, CHAR *username, CHAR *password,
                                     UINT wait_option) {
+    auto meth = Stm32NetXHttp::Method::byId(method);
     log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::client_request_initialize()");
+            ->printf("Stm32NetXHttpWebClient::BaseClient::client_request_initialize(%s, \"%s\", \"%s\", %d)\r\n",
+                     std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, meth),
+                     resource, host, input_size
+            );
 
     if (!flags.isSet(IS_CONNECTED)) {
 #if __EXCEPTIONS
@@ -210,8 +217,12 @@ UINT BaseClient::request_initialize_extended(UINT method, CHAR *resource, UINT r
                                              UINT host_length, UINT input_size, UINT transfer_encoding_trunked,
                                              CHAR *username, UINT username_length,
                                              CHAR *password, UINT password_length, UINT wait_option) {
+    auto meth = Stm32NetXHttp::Method::byId(method);
     log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::request_initialize_extended()");
+            ->printf("Stm32NetXHttpWebClient::BaseClient::request_initialize_extended(%s, \"%s\", \"%s\", %d)\r\n",
+                     std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, meth),
+                     resource, host, input_size
+            );
 
     if (!flags.isSet(IS_CONNECTED)) {
 #if __EXCEPTIONS
@@ -345,10 +356,11 @@ UINT BaseClient::response_header_callback_set(response_header_callback callback_
 }
 
 UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
-            ->println("Stm32NetXHttpWebClient::BaseClient::connect()");
-
     Stm32NetX::Address serverIpAddress{server_ip};
+    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+            ->printf("Stm32NetXHttpWebClient::BaseClient::connect(%s, %d)\r\n",
+                     static_cast<const char *>(Stm32NetX::AddressWriter{serverIpAddress}), server_port);
+
     if (!serverIpAddress.isValid()) {
 #if __EXCEPTIONS
         throw std::runtime_error("Invalid ip address");
@@ -411,6 +423,7 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
     return ret;
 }
 
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
 UINT BaseClient::secure_connect(NXD_ADDRESS *server_ip, UINT server_port, secure_connect_callback tls_setup,
                                 ULONG wait_option) {
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
@@ -427,3 +440,4 @@ UINT BaseClient::secure_connect(NXD_ADDRESS *server_ip, UINT server_port, secure
     }
     return ret;
 }
+#endif
