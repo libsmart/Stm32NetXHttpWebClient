@@ -52,10 +52,34 @@ namespace Stm32NetXHttpWebClient {
             : Loggable(logger), Nameable(name), nx(nx), NX_WEB_HTTP_CLIENT() { ; }
 */
 
+        /**
+         * Checks if the client is ready for a connection.
+         *
+         * @return True if the client is ready to connect, false otherwise.
+         *
+         * Determines if the client is ready to connect by verifying that it is created,
+         * not currently connected, and that the IP instance is set.
+         */
         bool isReadyForConnect();
 
+        /**
+         * Determines if the client is currently connected to a peer.
+         *
+         * @return True if the client is connected to a peer, false otherwise.
+         *
+         * Checks the connection status by retrieving peer information from the underlying TCP socket,
+         * and verifies that the client is created and the IP is set.
+         */
         bool isConnected();
 
+        /**
+         * Checks if the base client has been successfully created.
+         *
+         * @return True if the base client instance is created, false otherwise.
+         *
+         * This method determines whether the base client has been initialized by
+         * checking the internal flag that represents the creation state.
+         */
         bool isCreated();
 
 

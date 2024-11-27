@@ -21,7 +21,7 @@ bool BaseClient::isConnected() {
     Address peerIpAddress{};
     ULONG peerPort = 0;
     auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
-    if (ret == NX_SUCCESS) {
+    if (ret == NX_SUCCESS && isCreated() && Stm32NetX::NX->isIpSet()) {
         flags.set(IS_CONNECTED);
         return true;
     }
