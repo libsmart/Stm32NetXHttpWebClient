@@ -118,7 +118,7 @@ void Client::initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::U
 
     initialize(
         std::visit([](auto &arg) -> auto { return static_cast<HTTP_METHOD>(arg); }, method),
-        uri.get_path().c_str(),
+        uri.get_resource().c_str(),
         uri.get_host().c_str(),
         input_size,
         uri.get_username().empty() ? nullptr : uri.get_username().c_str(),
