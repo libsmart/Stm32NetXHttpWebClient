@@ -16,6 +16,7 @@
 #include "Address/Uri.hpp"
 #include "RequestMethods.hpp"
 #include "Packet/Packet.hpp"
+#include "Semaphore/Semaphore.hpp"
 
 
 #define NX_WEB_HTTP_SESSION_MAX 1
@@ -47,6 +48,26 @@ namespace Stm32NetXHttpWebClient {
 
 
         /**
+         * @brief Acquires the semaphore for the client.
+         *
+         * Attempts to acquire the semaphore associated with the client using a defined timeout value.
+         * Logs an error if the semaphore cannot be acquired.
+         *
+         * @return Returns true if the semaphore is successfully acquired, otherwise false.
+         */
+        bool acquire();
+
+        /**
+         * @brief Releases the semaphore for the client.
+         *
+         * Attempts to release the semaphore associated with the client by incrementing
+         * its counter. Returns the result of the operation.
+         *
+         * @return Returns true if the semaphore is successfully released, otherwise false.
+         */
+        bool release();
+
+        /**
          * @brief Creates an HTTP client instance.
          *
          * Initializes an HTTP client with the specified name, IP instance, packet pool, and window size.
@@ -56,6 +77,7 @@ namespace Stm32NetXHttpWebClient {
          */
         UINT create();
 
+        UINT del() override;
 
         UINT packetAllocate(NX_PACKET **packet_ptr);
 
@@ -102,6 +124,8 @@ namespace Stm32NetXHttpWebClient {
 
 
     private:
+        Stm32ThreadX::Semaphore semaphore{1, getName(), getLogger()};
+
         inline static Client *httpWebClientRegistry[5]{};
 
         static void registerInstance(const Client *self) {

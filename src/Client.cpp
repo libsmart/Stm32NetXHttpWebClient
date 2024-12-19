@@ -5,15 +5,41 @@
 
 #include "Client.hpp"
 #include <climits>
+#include <thread>
 
 #include "Address/Address.hpp"
 #include "Stm32NetX.hpp"
 
 using namespace Stm32NetXHttpWebClient;
 
+bool Client::acquire() {
+    const auto ret = semaphore.get(getTimeout());
+    if (ret != NX_SUCCESS) {
+        log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
+                ->printf("ERROR: WebClient is busy\r\n");
+#if __EXCEPTIONS
+        throw std::runtime_error("ERROR: WebClient is busy");
+#endif
+        return false;
+    }
+    return true;
+}
+
+bool Client::release() {
+    const auto ret = semaphore.ceiling_put(1);
+    return ret == NX_SUCCESS;
+}
+
 UINT Client::create() {
+    // if (!acquire()) return NX_CANNOT_START;
     return BaseClient::create(getNameNonConst(), Stm32NetX::NX->getIpInstance(), Stm32NetX::NX->getPacketPool(),
                               8 * 1024);
+}
+
+UINT Client::del() {
+    const auto ret = BaseClient::del();
+    release();
+    return ret;
 }
 
 UINT Client::headerAdd(const char *field_name, const char *field_value) {
