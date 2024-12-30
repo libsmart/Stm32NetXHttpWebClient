@@ -37,6 +37,8 @@ UINT BaseClient::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_p
     log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
             ->printf("Stm32NetXHttpWebClient::BaseClient::create(%s)\r\n", client_name);
 
+    flags.create();
+
     if (flags.isSet(IS_CREATED)) {
         return NX_SUCCESS;
     }

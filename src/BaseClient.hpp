@@ -8,7 +8,7 @@
 #include "nx_web_http_client.h"
 #include "Loggable.hpp"
 #include "Nameable.hpp"
-#include "EventFlags.hpp"
+#include "EventFlags/EventFlags.hpp"
 #include "Stm32NetX.hpp"
 
 namespace Stm32NetXHttpWebClient {

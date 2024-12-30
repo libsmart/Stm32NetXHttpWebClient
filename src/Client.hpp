@@ -8,7 +8,7 @@
 
 #include <BaseClient.hpp>
 
-#include "EventFlags.hpp"
+#include "EventFlags/EventFlags.hpp"
 #include "Secure/X509.hpp"
 #include "Loggable.hpp"
 #include "Nameable.hpp"
