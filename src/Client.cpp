@@ -15,11 +15,8 @@ using namespace Stm32NetXHttpWebClient;
 bool Client::acquire() {
     const auto ret = semaphore.get(getTimeout());
     if (ret != NX_SUCCESS) {
-        log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf("ERROR: WebClient is busy\r\n");
-#if __EXCEPTIONS
-        throw std::runtime_error("ERROR: WebClient is busy");
-#endif
+        constexpr char fmt[] = "Stm32NetXHttpWebClient::Client[%s]: WebClient is busy";
+        LIBSMART_HANDLE_ERROR(fmt, getName());
         return false;
     }
     return true;
@@ -185,9 +182,8 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
     ULONG metadata_size;
     ret = nx_secure_tls_metadata_size_calculate(&nx_crypto_tls_ciphers, &metadata_size);
     if (ret != NX_SUCCESS) {
-        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf("nx_secure_tls_metadata_size_calculate() = 0x%02x\r\n",
-                         ret);
+        constexpr char fmt[] = "Stm32NetXHttpWebClient::Client[%s]: nx_secure_tls_metadata_size_calculate() = 0x%02x";
+        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
         return ret;
     }
 
@@ -197,14 +193,14 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
                          sizeof(crypto_metadata));
     }
 
+
     // Create a TLS session
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-secure-tls/chapter4.md#nx_secure_tls_session_create
     ret = nx_secure_tls_session_create(tls_session, &nx_crypto_tls_ciphers,
                                        crypto_metadata, sizeof(crypto_metadata));
     if (ret != NX_SUCCESS) {
-        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf("TLS session create failed. nx_secure_tls_session_create() = 0x%02x\r\n",
-                         ret);
+        constexpr char fmt[] = "Stm32NetXHttpWebClient::Client[%s]: nx_secure_tls_session_create() = 0x%02x";
+        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
         return ret;
     }
 
@@ -213,10 +209,8 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
     ret = nx_secure_tls_session_packet_buffer_set(tls_session, tls_packet_buffer,
                                                   sizeof(tls_packet_buffer));
     if (ret != NX_SUCCESS) {
-        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf(
-                    "nx_secure_tls_session_packet_buffer_set() = 0x%02x\r\n",
-                    ret);
+        constexpr char fmt[] = "Stm32NetXHttpWebClient::Client[%s]: nx_secure_tls_session_packet_buffer_set() = 0x%02x";
+        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
         return ret;
     }
 
@@ -229,13 +223,10 @@ UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
     ret = nx_secure_tls_remote_certificate_allocate(tls_session, &remote_certificate,
                                                     remote_cert_buffer, sizeof(remote_cert_buffer));
     if (ret != NX_SUCCESS) {
-        log(Stm32ItmLogger::LoggerInterface::Severity::ERROR)
-                ->printf(
-                    "TLS remote certificate allocations failed. nx_secure_tls_remote_certificate_allocate() = 0x%02x\r\n",
-                    ret);
+        constexpr char fmt[] = "Stm32NetXHttpWebClient::Client[%s]: nx_secure_tls_remote_certificate_allocate() = 0x%02x";
+        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
         return ret;
     }
-
 
     // Add a CA Certificate to our trusted store for verifying incoming server certificates
     // nx_secure_x509_certificate_initialize(&trusted_certificate, trusted_cert_der,
