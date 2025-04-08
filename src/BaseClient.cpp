@@ -6,11 +6,11 @@
 #include "BaseClient.hpp"
 #include <climits>
 #include <stdexcept>
-
 #include "HttpStatusCodeException.hpp"
 #include "Address/Address.hpp"
 #include "RequestMethods.hpp"
 #include "Address/AddressPrinter.hpp"
+#include "Exception/NetXRuntimeException.hpp"
 #include "Exception/TimeoutException.hpp"
 
 using namespace Stm32NetX;
@@ -24,7 +24,7 @@ bool BaseClient::isConnected() {
     Address peerIpAddress{};
     ULONG peerPort = 0;
     auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
-    if (ret == NX_SUCCESS && isCreated() && Stm32NetX::NX->isIpSet()) {
+    if (ret == NX_SUCCESS && isCreated() && NX->isIpSet()) {
         flags.set(IS_CONNECTED);
         return true;
     }
@@ -54,8 +54,8 @@ UINT BaseClient::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_p
                                                window_size);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_create() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_create() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     flags.set(IS_CREATED);
     return ret;
@@ -80,8 +80,8 @@ UINT BaseClient::del() {
     std::memset(static_cast<NX_WEB_HTTP_CLIENT *>(this), 0, sizeof(NX_WEB_HTTP_CLIENT));
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_delete() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_delete() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -97,8 +97,8 @@ UINT BaseClient::request_packet_allocate(NX_PACKET **packet_ptr, ULONG wait_opti
         wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_packet_allocate() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_packet_allocate() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     flags.set(IS_PACKET_ALLOCATED);
     return ret;
@@ -115,8 +115,8 @@ UINT BaseClient::request_chunked_set(UINT chunk_size, NX_PACKET *packet_ptr) {
         packet_ptr);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_chunked_set() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_chunked_set() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -135,8 +135,8 @@ UINT BaseClient::request_header_add(CHAR *field_name, UINT name_length, CHAR *fi
         wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_header_add() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_header_add() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -152,9 +152,8 @@ UINT BaseClient::request_initialize(UINT method, CHAR *resource, CHAR *host, UIN
             );
 
     if (!flags.isSet(IS_CONNECTED)) {
-#if __EXCEPTIONS
-        throw std::runtime_error("Stm32NetXHttpWebClient not connected");
-#endif
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: %s";
+        LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CONNECTED, fmt, getName(), NetXApiReturnValues::getErrorString(NX_NOT_CONNECTED));
         return NX_NOT_CONNECTED;
     }
 
@@ -171,8 +170,8 @@ UINT BaseClient::request_initialize(UINT method, CHAR *resource, CHAR *host, UIN
         wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_initialize() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_initialize() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     flags.set(IS_INITIALIZED);
     return ret;
@@ -190,8 +189,8 @@ UINT BaseClient::request_initialize_extended(UINT method, CHAR *resource, UINT r
             );
 
     if (!flags.isSet(IS_CONNECTED)) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: not connected";
-        LIBSMART_HANDLE_ERROR(fmt, getName());
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: not connected";
+        LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CONNECTED, fmt, getName());
         return NX_NOT_CONNECTED;
     }
 
@@ -212,8 +211,8 @@ UINT BaseClient::request_initialize_extended(UINT method, CHAR *resource, UINT r
         wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_initialize_extended() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_initialize_extended() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     flags.set(IS_INITIALIZED);
     return ret;
@@ -224,8 +223,8 @@ UINT BaseClient::request_packet_send(NX_PACKET *packet_ptr, UINT more_data, ULON
             ->println("Stm32NetXHttpWebClient::BaseClient::request_packet_send()");
 
     if (!flags.isSet(IS_INITIALIZED)) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: request not initialized";
-        LIBSMART_HANDLE_ERROR(fmt, getName());
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: request not initialized";
+        LIBSMART_HANDLE_NETX_ERROR(NX_NOT_SUCCESSFUL, fmt, getName());
         return NX_NOT_SUCCESSFUL;
     }
 
@@ -237,8 +236,8 @@ UINT BaseClient::request_packet_send(NX_PACKET *packet_ptr, UINT more_data, ULON
         wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_packet_send() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_packet_send() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -248,8 +247,8 @@ UINT BaseClient::request_send(UINT wait_option) {
             ->println("Stm32NetXHttpWebClient::BaseClient::request_send()");
 
     if (!flags.isSet(IS_INITIALIZED)) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: request not initialized";
-        LIBSMART_HANDLE_ERROR(fmt, getName());
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: request not initialized";
+        LIBSMART_HANDLE_NETX_ERROR(NX_NOT_SUCCESSFUL, fmt, getName());
         return NX_NOT_SUCCESSFUL;
     }
 
@@ -257,8 +256,8 @@ UINT BaseClient::request_send(UINT wait_option) {
     const auto ret = nx_web_http_client_request_send(static_cast<NX_WEB_HTTP_CLIENT *>(this), wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_send() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_request_send() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     // flags.set(IS_INITIALIZED);
     return ret;
@@ -279,8 +278,8 @@ UINT BaseClient::response_body_get(NX_PACKET **packet_ptr, ULONG wait_option) {
         const auto ex = Stm32NetXHttpCommon::HttpStatusCode::find(ret);
         if (ex.has_value()) throw Stm32NetXHttpCommon::HttpStatusCodeException(ex.value());
 
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_response_body_get() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_response_body_get() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -294,8 +293,8 @@ UINT BaseClient::response_header_callback_set(response_header_callback callback_
         static_cast<NX_WEB_HTTP_CLIENT *>(this), callback_function);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_response_header_callback_set() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_response_header_callback_set() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
@@ -307,14 +306,14 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
                      static_cast<const char *>(Stm32NetX::AddressWriter{serverIpAddress}), server_port);
 
     if (!serverIpAddress.isValid()) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid ip address";
-        LIBSMART_HANDLE_ERROR(fmt, getName());
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid ip address";
+        LIBSMART_HANDLE_NETX_ERROR(NX_IP_ADDRESS_ERROR, fmt, getName());
         return NX_IP_ADDRESS_ERROR;
     }
 
     if (server_port == 0) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid port";
-        LIBSMART_HANDLE_ERROR(fmt, getName());
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid port";
+        LIBSMART_HANDLE_NETX_ERROR(NX_INVALID_PORT, fmt, getName());
         return NX_INVALID_PORT;
     }
 
@@ -331,14 +330,14 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
                 return NX_SUCCESS;
             } else {
                 // Connected to other peer => ERROR
-                constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: Connection already established to other peer";
-                LIBSMART_HANDLE_ERROR(fmt, getName());
+                constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Connection already established to other peer";
+                LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CREATED, fmt, getName());
                 return NX_NOT_CREATED;
             }
         } else {
             // Not connected, but not ready for connect => ERROR
-            constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: Not ready for connection";
-            LIBSMART_HANDLE_ERROR(fmt, getName());
+            constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Not ready for connection";
+            LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CREATED, fmt, getName());
             return NX_NOT_CREATED;
         }
     }
@@ -351,8 +350,8 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
     );
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_connect() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_connect() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     flags.set(IS_CONNECTED);
     return ret;
@@ -369,8 +368,8 @@ UINT BaseClient::secure_connect(NXD_ADDRESS *server_ip, UINT server_port, secure
         static_cast<NX_WEB_HTTP_CLIENT *>(this), server_ip, server_port, tls_setup, wait_option);
 
     if (ret != NX_SUCCESS) {
-        constexpr char fmt[] = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_secure_connect() = 0x%02x";
-        LIBSMART_HANDLE_ERROR(fmt, getName(), ret);
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_secure_connect() = %s (0x%02x)";
+        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
     }
     return ret;
 }
