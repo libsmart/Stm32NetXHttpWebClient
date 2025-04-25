@@ -100,7 +100,7 @@ UINT Client::connect(const Stm32NetX::Uri &uri) {
 }
 
 void Client::initializeRequest(Stm32NetXHttp::Methods method, const Stm32NetX::Uri &uri, UINT input_size) {
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::Client::initializeRequest(%s, \"%s\", %d)\r\n",
                      std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, method),
                      uri.to_string().c_str(),
@@ -167,7 +167,7 @@ UINT Client::responseBodyGet(Stm32NetX::Packet &packet) {
 
 
 UINT Client::tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::Client::tlsSetupCallback()");
 
 

@@ -37,7 +37,7 @@ bool BaseClient::isCreated() {
 }
 
 UINT BaseClient::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_ptr, ULONG window_size) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::create(%s)\r\n", client_name);
 
     flags.create();
@@ -62,7 +62,7 @@ UINT BaseClient::create(CHAR *client_name, NX_IP *ip_ptr, NX_PACKET_POOL *pool_p
 }
 
 UINT BaseClient::del() {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::del()");
 
     if (!flags.isSet(IS_CREATED)) {
@@ -87,7 +87,7 @@ UINT BaseClient::del() {
 }
 
 UINT BaseClient::request_packet_allocate(NX_PACKET **packet_ptr, ULONG wait_option) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::request_packet_allocate()");
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_request_packet_allocate
@@ -105,7 +105,7 @@ UINT BaseClient::request_packet_allocate(NX_PACKET **packet_ptr, ULONG wait_opti
 }
 
 UINT BaseClient::request_chunked_set(UINT chunk_size, NX_PACKET *packet_ptr) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::request_chunked_set(%d)\r\n", chunk_size);
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_request_chunked_set
@@ -123,7 +123,7 @@ UINT BaseClient::request_chunked_set(UINT chunk_size, NX_PACKET *packet_ptr) {
 
 UINT BaseClient::request_header_add(CHAR *field_name, UINT name_length, CHAR *field_value, UINT value_length,
                                     UINT wait_option) {
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::request_header_add(\"%s\", \"%s\")\r\n",
                      field_name, field_value);
 
@@ -145,7 +145,7 @@ UINT BaseClient::request_initialize(UINT method, CHAR *resource, CHAR *host, UIN
                                     UINT transfer_encoding_trunked, CHAR *username, CHAR *password,
                                     UINT wait_option) {
     auto meth = Stm32NetXHttp::Method::byId(method);
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::client_request_initialize(%s, \"%s\", \"%s\", %d)\r\n",
                      std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, meth),
                      resource, host, input_size
@@ -182,7 +182,7 @@ UINT BaseClient::request_initialize_extended(UINT method, CHAR *resource, UINT r
                                              CHAR *username, UINT username_length,
                                              CHAR *password, UINT password_length, UINT wait_option) {
     auto meth = Stm32NetXHttp::Method::byId(method);
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::request_initialize_extended(%s, \"%s\", \"%s\", %d)\r\n",
                      std::visit([](auto &arg) -> auto { return static_cast<const char *>(arg); }, meth),
                      resource, host, input_size
@@ -219,7 +219,7 @@ UINT BaseClient::request_initialize_extended(UINT method, CHAR *resource, UINT r
 }
 
 UINT BaseClient::request_packet_send(NX_PACKET *packet_ptr, UINT more_data, ULONG wait_option) {
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::request_packet_send()");
 
     if (!flags.isSet(IS_INITIALIZED)) {
@@ -243,7 +243,7 @@ UINT BaseClient::request_packet_send(NX_PACKET *packet_ptr, UINT more_data, ULON
 }
 
 UINT BaseClient::request_send(UINT wait_option) {
-    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log()->setSeverity(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::request_send()");
 
     if (!flags.isSet(IS_INITIALIZED)) {
@@ -264,7 +264,7 @@ UINT BaseClient::request_send(UINT wait_option) {
 }
 
 UINT BaseClient::response_body_get(NX_PACKET **packet_ptr, ULONG wait_option) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::response_body_get()");
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_response_body_get
@@ -285,7 +285,7 @@ UINT BaseClient::response_body_get(NX_PACKET **packet_ptr, ULONG wait_option) {
 }
 
 UINT BaseClient::response_header_callback_set(response_header_callback callback_function) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::response_header_callback_set()");
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_response_header_callback_set
@@ -301,7 +301,7 @@ UINT BaseClient::response_header_callback_set(response_header_callback callback_
 
 UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_option) {
     Stm32NetX::Address serverIpAddress{server_ip};
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->printf("Stm32NetXHttpWebClient::BaseClient::connect(%s, %d)\r\n",
                      static_cast<const char *>(Stm32NetX::AddressWriter{serverIpAddress}), server_port);
 
@@ -360,7 +360,7 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
 #if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
 UINT BaseClient::secure_connect(NXD_ADDRESS *server_ip, UINT server_port, secure_connect_callback tls_setup,
                                 ULONG wait_option) {
-    log(Stm32ItmLogger::LoggerInterface::Severity::INFORMATIONAL)
+    log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::secure_connect()");
 
     // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_response_header_callback_set
