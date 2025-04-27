@@ -302,6 +302,6 @@ namespace Stm32NetXHttpWebClient {
         Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};
 
     private:
-        Stm32NetX::NetX *nx{};
+        //Stm32NetX::NetX *nx{};
     };
 }
