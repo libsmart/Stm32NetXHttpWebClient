@@ -20,6 +20,10 @@ bool BaseClient::isReadyForConnect() {
     return isCreated() && !isConnected() && Stm32NetX::NX->isIpSet();
 }
 
+bool BaseClient::isReady() {
+    return isReadyForConnect() || isConnected();
+}
+
 bool BaseClient::isConnected() {
     Address peerIpAddress{};
     ULONG peerPort = 0;

@@ -63,6 +63,16 @@ namespace Stm32NetXHttpWebClient {
         bool isReadyForConnect();
 
         /**
+         * Determines whether the client is in a state ready for operation.
+         *
+         * @return True if the client is either ready to connect or already connected, false otherwise.
+         *
+         * Evaluates if the client can begin or continue communication by checking if it is prepared for a connection
+         * or currently maintains an active connection.
+         */
+        bool isReady();
+
+        /**
          * Determines if the client is currently connected to a peer.
          *
          * @return True if the client is connected to a peer, false otherwise.
