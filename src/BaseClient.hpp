@@ -5,17 +5,26 @@
 
 #pragma once
 
-#include "nx_web_http_client.h"
 #include "Loggable.hpp"
 #include "Nameable.hpp"
 #include "EventFlags/EventFlags.hpp"
 #include "Stm32NetX.hpp"
+#include "String/FixedString.hpp"
+
+extern "C" {
+#include "nx_web_http_client.h"
+}
 
 namespace Stm32NetXHttpWebClient {
     class BaseClient : protected NX_WEB_HTTP_CLIENT, public Stm32ItmLogger::Loggable, public Stm32Common::Nameable {
         friend class Request;
 
     public:
+        using HeaderFieldName = Stm32Common::String::FixedString<30>;
+        using HeaderFieldValue = Stm32Common::String::FixedString<100>;
+        using ContentLength = uint32_t;
+        using ContentType = Stm32Common::String::FixedString<100>;
+
         using Flags = enum: ULONG {
             NONE = 0,
             IS_CREATED = 1UL << 0,

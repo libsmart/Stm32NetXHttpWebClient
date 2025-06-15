@@ -318,25 +318,25 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
                      static_cast<const char *>(Stm32NetX::AddressWriter{serverIpAddress}), server_port);
 
     if (!NX->isIpSet()) {
-        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid ip address";
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]::connect(): Invalid ip address";
         LIBSMART_HANDLE_NETX_ERROR(NX_IP_ADDRESS_ERROR, fmt, getName());
         return NX_IP_ADDRESS_ERROR;
     }
 
     if (!serverIpAddress.isValid()) {
-        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid server ip address";
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]::connect(): Invalid server ip address";
         LIBSMART_HANDLE_NETX_ERROR(NX_IP_ADDRESS_ERROR, fmt, getName());
         return NX_IP_ADDRESS_ERROR;
     }
 
     if (server_port == 0) {
-        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Invalid server port";
+        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]::connect(): Invalid server port";
         LIBSMART_HANDLE_NETX_ERROR(NX_INVALID_PORT, fmt, getName());
         return NX_INVALID_PORT;
     }
 
     if (!isReadyForConnect()) {
-        Stm32NetX::Address peerIpAddress{};
+        Address peerIpAddress{};
         ULONG peerPort = 0;
 
         auto const ret = nxd_tcp_socket_peer_info_get(&this->nx_web_http_client_socket, &peerIpAddress, &peerPort);
@@ -349,13 +349,13 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
             } else {
                 // Connected to other peer => ERROR
                 constexpr auto fmt =
-                        "Stm32NetXHttpWebClient::BaseClient[%s]: Connection already established to other peer";
+                        "Stm32NetXHttpWebClient::BaseClient[%s]::connect(): Connection already established to other peer";
                 LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CREATED, fmt, getName());
                 return NX_NOT_CREATED;
             }
         } else {
             // Not connected and not ready for connect => ERROR
-            constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: Not ready for connection";
+            constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]::connect(): Not ready for connection";
             LIBSMART_HANDLE_NETX_ERROR(NX_NOT_CREATED, fmt, getName());
             return NX_NOT_CREATED;
         }

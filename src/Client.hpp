@@ -7,17 +7,18 @@
 #define LIBSMART_STM32NETXHTTPWEBCLIENT_CLIENT_HPP
 
 #include <BaseClient.hpp>
-
 #include "EventFlags/EventFlags.hpp"
 #include "Secure/X509.hpp"
 #include "Loggable.hpp"
 #include "Nameable.hpp"
-#include "nx_web_http_client.h"
 #include "Address/Uri.hpp"
 #include "RequestMethods.hpp"
 #include "Packet/Packet.hpp"
 #include "Semaphore/Semaphore.hpp"
 
+extern "C" {
+#include "nx_web_http_client.h"
+}
 
 #define NX_WEB_HTTP_SESSION_MAX 1
 

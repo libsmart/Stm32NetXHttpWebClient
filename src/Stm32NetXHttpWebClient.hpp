@@ -10,6 +10,7 @@
 #include <main.h>
 
 namespace Stm32NetXHttpWebClient {
+    constexpr char COMPONENT_NAME[] = "Stm32NetXHttpWebClient";
 }
 
 #endif
