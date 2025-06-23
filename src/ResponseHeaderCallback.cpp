@@ -4,7 +4,6 @@
  */
 
 #include "ResponseHeaderCallback.hpp"
-
 #include "Stm32ItmLogger.hpp"
 
 using namespace Stm32NetXHttpWebClient;
@@ -23,7 +22,7 @@ void ResponseHeaderCallback::callback(NX_WEB_HTTP_CLIENT *client_ptr,
                                       CHAR *field_name, const UINT field_name_length,
                                       CHAR *field_value, const UINT field_value_length) {
     Stm32ItmLogger::logger.setSeverity(Stm32ItmLogger::LoggerInterface::Severity::WARNING);
-    Stm32ItmLogger::logger.printf("%.*s : %.*s", field_name_length, field_name, field_value_length, field_value);
+    Stm32ItmLogger::logger.printf("%.*s : %.*s\r\n", field_name_length, field_name, field_value_length, field_value);
 
     BaseClient::HeaderFieldName name{field_name, field_name_length};
     BaseClient::HeaderFieldValue value{field_value, field_value_length};
