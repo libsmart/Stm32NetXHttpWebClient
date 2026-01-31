@@ -1,5 +1,5 @@
 /*
- * SPDX-FileCopyrightText: 2024 Roland Rusch, easy-smart solution GmbH <roland.rusch@easy-smart.ch>
+ * SPDX-FileCopyrightText: 2026 Roland Rusch, easy-smart solution GmbH <roland.rusch@easy-smart.ch>
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -7,10 +7,10 @@
 
 #include <variant>
 
-using namespace Stm32NetXHttpWebClient;
-
 namespace Stm32NetXHttp {
     namespace Method {
+        using namespace Stm32NetXHttpWebClient;
+
         struct NONE {
             explicit operator const char *() const { return "NONE"; }
             explicit operator BaseClient::HTTP_METHOD() const { return BaseClient::METHOD_NONE; }
