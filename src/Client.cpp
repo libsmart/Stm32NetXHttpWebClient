@@ -27,6 +27,12 @@ bool Client::release() {
     return ret == NX_SUCCESS;
 }
 
+bool Client::isReleased() {
+    ULONG count;
+    const auto ret = semaphore.info_get(nullptr, &count, nullptr, nullptr, nullptr);
+    return ret == NX_SUCCESS && count == 1;
+}
+
 UINT Client::create() {
     // if (!acquire()) return NX_CANNOT_START;
     return BaseClient::create(getNameNonConst(), Stm32NetX::NX->getIpInstance(), Stm32NetX::NX->getPacketPool(),
@@ -35,7 +41,7 @@ UINT Client::create() {
 
 UINT Client::del() {
     const auto ret = BaseClient::del();
-    release();
+    if (!isReleased()) release();
     return ret;
 }
 

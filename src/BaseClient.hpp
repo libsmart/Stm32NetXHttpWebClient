@@ -46,6 +46,10 @@ namespace Stm32NetXHttpWebClient {
 
         BaseClient() : NX_WEB_HTTP_CLIENT() { ; }
 
+        ~BaseClient() override {
+            flags.del();
+        }
+
         /*
         explicit BaseClient(Stm32NetX::NetX *nx)
             : BaseClient(nx, "Stm32NetXHttpWebClient", &Stm32ItmLogger::emptyLogger) {

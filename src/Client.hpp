@@ -33,6 +33,10 @@ namespace Stm32NetXHttpWebClient {
     public:
         Client() = default;
 
+        ~Client() override {
+            semaphore.del();
+        }
+
         /*
         explicit Client(Stm32NetX::NetX *nx)
             : BaseClient(nx) { ; }
@@ -67,6 +71,8 @@ namespace Stm32NetXHttpWebClient {
          * @return Returns true if the semaphore is successfully released, otherwise false.
          */
         bool release();
+
+        bool isReleased();
 
         /**
          * @brief Creates an HTTP client instance.
