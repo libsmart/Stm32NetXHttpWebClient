@@ -361,16 +361,29 @@ UINT BaseClient::connect(NXD_ADDRESS *server_ip, UINT server_port, ULONG wait_op
         }
     }
 
-    // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_connect
-    const auto ret = nx_web_http_client_connect(this,
-                                                server_ip,
-                                                server_port,
-                                                wait_option
-    );
+    UINT ret=NX_NOT_IMPLEMENTED;
+    if (useTls) {
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
+        // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_secure_connect
+        ret = nx_web_http_client_secure_connect(
+            static_cast<NX_WEB_HTTP_CLIENT *>(this), server_ip, server_port, tlsSetupCb->getBounce(), wait_option);
+#endif
+        if (ret != NX_SUCCESS) {
+            constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_secure_connect() = %s (0x%02x)";
+            LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
+        }
+    } else {
+        // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_connect
+        ret = nx_web_http_client_connect(this,
+                                                    server_ip,
+                                                    server_port,
+                                                    wait_option
+        );
 
-    if (ret != NX_SUCCESS) {
-        constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_connect() = %s (0x%02x)";
-        LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
+        if (ret != NX_SUCCESS) {
+            constexpr auto fmt = "Stm32NetXHttpWebClient::BaseClient[%s]: nx_web_http_client_connect() = %s (0x%02x)";
+            LIBSMART_HANDLE_NETX_ERROR(ret, fmt, getName(), NetXApiReturnValues::getErrorString(ret), ret);
+        }
     }
     flags.set(IS_CONNECTED);
     return ret;
@@ -382,7 +395,7 @@ UINT BaseClient::secure_connect(NXD_ADDRESS *server_ip, UINT server_port, secure
     log(Stm32ItmLogger::LoggerInterface::Severity::DEBUGGING)
             ->println("Stm32NetXHttpWebClient::BaseClient::secure_connect()");
 
-    // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_response_header_callback_set
+    // @see https://github.com/eclipse-threadx/rtos-docs/blob/main/rtos-docs/netx-duo/netx-duo-web-http/chapter3.md#nx_web_http_client_secure_connect
     const auto ret = nx_web_http_client_secure_connect(
         static_cast<NX_WEB_HTTP_CLIENT *>(this), server_ip, server_port, tls_setup, wait_option);
 

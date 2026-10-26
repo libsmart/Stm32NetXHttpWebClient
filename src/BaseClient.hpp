@@ -9,6 +9,7 @@
 #include "Nameable.hpp"
 #include "EventFlags/EventFlags.hpp"
 #include "Stm32NetX.hpp"
+#include "TlsSetupCallback.hpp"
 #include "String/FixedString.hpp"
 
 extern "C" {
@@ -45,6 +46,18 @@ namespace Stm32NetXHttpWebClient {
 
 
         BaseClient() : NX_WEB_HTTP_CLIENT() { ; }
+
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
+        using secure_connect_callback = UINT (*)(NX_WEB_HTTP_CLIENT *client_ptr, NX_SECURE_TLS_SESSION *tls);
+
+        explicit BaseClient(TlsSetupCallback *tlsSetupCallback)
+            : NX_WEB_HTTP_CLIENT(), tlsSetupCb(tlsSetupCallback) { ; }
+
+        void registerTlsSetupCallback(TlsSetupCallback *tlsSetupCallback) {
+            this->tlsSetupCb = tlsSetupCallback;
+        }
+
+#endif
 
         ~BaseClient() override {
             flags.del();
@@ -302,8 +315,6 @@ namespace Stm32NetXHttpWebClient {
 
 
 #if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
-        using secure_connect_callback = UINT (*)(NX_WEB_HTTP_CLIENT *client_ptr, NX_SECURE_TLS_SESSION *tls);
-
         /**
          * Establishes a secure connection to a server using the provided parameters.
          *
@@ -319,10 +330,15 @@ namespace Stm32NetXHttpWebClient {
          */
         virtual UINT secure_connect(NXD_ADDRESS *server_ip, UINT server_port,
                                     secure_connect_callback tls_setup, ULONG wait_option);
+
+    protected:
+        TlsSetupCallback *tlsSetupCb{nullptr};
 #endif
 
     protected:
         Stm32ThreadX::EventFlags flags{"Stm32NetXHttpWebClient::Client::flags", getLogger()};
+
+        bool useTls{false};
 
     private:
         //Stm32NetX::NetX *nx{};

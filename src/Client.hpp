@@ -23,6 +23,9 @@ extern "C" {
 #define NX_WEB_HTTP_SESSION_MAX 1
 
 #if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
+#if defined(NX_SECURE_ENABLE_ECC_CIPHERSUITE)
+extern const NX_SECURE_TLS_CRYPTO nx_crypto_tls_ciphers_ecc;
+#endif
 extern const NX_SECURE_TLS_CRYPTO nx_crypto_tls_ciphers;
 #endif
 
@@ -32,6 +35,10 @@ namespace Stm32NetXHttpWebClient {
 
     public:
         Client() = default;
+
+#if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
+        explicit Client(TlsSetupCallback *tlsSetupCallback) : BaseClient(tlsSetupCallback) { ; }
+#endif
 
         ~Client() override {
             semaphore.del();
@@ -191,14 +198,12 @@ namespace Stm32NetXHttpWebClient {
 
 #if defined(LIBSMART_STM32NETX_ENABLE_TLS) && defined(NX_WEB_HTTPS_ENABLE)
 
-    private:
-        UINT tlsSetupCallback(NX_SECURE_TLS_SESSION *tls_session);
-
-        NX_SECURE_X509_CERT remote_certificate{};
-        CHAR crypto_metadata[10128 * NX_WEB_HTTP_SESSION_MAX]{};
-        UCHAR tls_packet_buffer[16500]{};
-        UCHAR remote_cert_buffer[2000]{};
-        UCHAR remote_issuer_buffer[2000]{};
+    public:
+#if defined(NX_SECURE_ENABLE_ECC_CIPHERSUITE)
+        const NX_SECURE_TLS_CRYPTO &crypto_tls_ciphers = nx_crypto_tls_ciphers_ecc;
+#else
+        const NX_SECURE_TLS_CRYPTO &crypto_tls_ciphers = nx_crypto_tls_ciphers;
+#endif
 
 #endif
     };
